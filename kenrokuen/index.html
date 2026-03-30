@@ -197,8 +197,22 @@
 
         /* テーブルスタイル */
         .table-responsive {
-            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 450px; /* 10行分程度の高さ制限を追加 */
         }
+        /* スクロールバーのスタイル調整 */
+        .table-responsive::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #d1d5db; 
+            border-radius: 4px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -218,6 +232,7 @@
             font-weight: 700;
             position: sticky;
             top: 0;
+            z-index: 10; /* スクロール時に他の行より手前にする */
         }
         tr:hover {
             background-color: var(--tifo-bg);
@@ -242,8 +257,9 @@
         .ranking-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 0;
+            padding: 0.75rem 0.5rem;
             border-bottom: 1px dashed var(--tifo-card-border);
+            transition: background-color 0.2s ease, border-radius 0.2s ease;
         }
         .ranking-item:last-child {
             border-bottom: none;
@@ -256,6 +272,16 @@
         .ranking-value {
             font-weight: 700;
             color: var(--tifo-primary-dark);
+        }
+        
+        /* モーダル表示用にクリック可能にする */
+        .ranking-item.clickable {
+            cursor: pointer;
+        }
+        .ranking-item.clickable:hover {
+            background-color: var(--tifo-bg);
+            border-radius: 8px;
+            border-bottom-color: transparent; /* ホバー時は線を消す */
         }
 
         /* プログレスバー（インバウンド指数用） */
@@ -273,6 +299,42 @@
             font-weight: bold;
         }
 
+        /* --- モーダル用スタイル --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(45, 55, 72, 0.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.hidden .modal-content {
+            transform: translateY(-20px);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+        }
+        .modal-close-btn {
+            background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--tifo-muted);
+            transition: color 0.2s;
+        }
+        .modal-close-btn:hover {
+            color: var(--tifo-text);
+        }
+
         /* レスポンシブ対応 */
         @media (max-width: 768px) {
             .two-col-grid {
@@ -287,6 +349,9 @@
             }
             h1 {
                 font-size: 1.5rem;
+            }
+            .modal-content {
+                padding: 1.5rem;
             }
         }
         
@@ -305,8 +370,8 @@
 </head>
 <body class="tab-kenrokuen">
 
-<!-- 追加: データ取得中のローディング画面 -->
-<div id="loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--tifo-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<!-- データ取得中のローディング画面 -->
+<div id="loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--tifo-bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
     <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--tifo-primary); margin-bottom: 1rem;"></i>
     <div style="font-weight: bold; color: var(--tifo-muted);">スプレッドシートからデータを取得中...</div>
 </div>
@@ -381,7 +446,10 @@
             <div class="two-col-grid">
                 <!-- 国別ランキング -->
                 <div class="tifo-card" style="margin-bottom: 0;">
-                    <h2 class="card-title"><i class="fa-solid fa-earth-asia"></i> 国別ランキング</h2>
+                    <div class="card-header-flex">
+                        <h2 class="card-title"><i class="fa-solid fa-earth-asia"></i> 国別ランキング</h2>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--tifo-muted); margin-bottom: 10px; text-align: right;">※国名をクリックで推移を表示</div>
                     <ul class="ranking-list" id="country-ranking">
                         <!-- JSで動的に生成 -->
                     </ul>
@@ -427,6 +495,7 @@
         <!-- 5. 年度別データ表 (全幅、一番下) -->
         <div class="tifo-card">
             <h2 class="card-title"><i class="fa-solid fa-table"></i> 年度別 データ表</h2>
+            <!-- .table-responsive に高さを設けてスクロール可能にしています -->
             <div class="table-responsive">
                 <table id="yearlyTable">
                     <thead>
@@ -442,7 +511,34 @@
                 </table>
             </div>
         </div>
+
+        <!-- 元データリンク (一番下) -->
+        <div style="text-align: right; margin-top: 2rem;">
+            <a href="https://docs.google.com/spreadsheets/u/1/d/1HdaqmIPXDChGrc2XynYPtzkDRIIBQObh41GS9T4ohlo/edit?usp=sharing" target="_blank" style="color: var(--tifo-muted); text-decoration: underline; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> 元データはこちら (Google Spreadsheet)
+            </a>
+        </div>
+
     </main>
+</div>
+
+<!-- モーダル（国別グラフ） -->
+<div class="modal-overlay hidden" id="country-modal" onclick="if(event.target === this) closeCountryModal()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="card-title" id="modal-country-title" style="margin: 0; font-size: 1.4rem;"></h2>
+            <button class="modal-close-btn" onclick="closeCountryModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+            <div class="period-controls">
+                <button class="period-btn active" id="btn-modal-monthly" onclick="changeModalPeriod('monthly')">月別推移</button>
+                <button class="period-btn" id="btn-modal-yearly" onclick="changeModalPeriod('yearly')">年度別推移</button>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="modalChart"></canvas>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -456,9 +552,15 @@
     let currentTab = 'kenrokuen'; 
     let chartPeriod = '3years'; 
     let inboundChartPeriod = '3years'; 
+    
     let monthlyChartInstance = null;
     let yearlyChartInstance = null;
-    let inboundChartInstance = null; // 追加: インバウンド用チャート
+    let inboundChartInstance = null;
+    
+    // モーダル用状態
+    let modalCountry = '';
+    let modalPeriod = 'monthly';
+    let modalChartInstance = null;
     
     // カラー設定
     const colors = {
@@ -610,7 +712,89 @@
         };
     }
 
-    // --- 5. UI更新ロジック ---
+    // --- 5. モーダル（国別グラフ）の制御 ---
+    function openCountryModal(country) {
+        modalCountry = country;
+        document.getElementById('modal-country-title').innerHTML = `<i class="fa-solid fa-earth-asia" style="margin-right:8px; color:var(--tifo-muted);"></i> ${country} の入園者数推移`;
+        document.getElementById('country-modal').classList.remove('hidden');
+        
+        // デフォルトは月別に
+        changeModalPeriod('monthly');
+    }
+
+    function closeCountryModal() {
+        document.getElementById('country-modal').classList.add('hidden');
+    }
+
+    function changeModalPeriod(period) {
+        modalPeriod = period;
+        document.getElementById('btn-modal-monthly').classList.remove('active');
+        document.getElementById('btn-modal-yearly').classList.remove('active');
+        document.getElementById(`btn-modal-${period}`).classList.add('active');
+        
+        updateModalChart();
+    }
+
+    function updateModalChart() {
+        let labels = [];
+        let dataCounts = [];
+
+        // データ抽出
+        if (modalPeriod === 'monthly') {
+            monthlyData.forEach(d => {
+                const date = new Date(d.month);
+                labels.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
+                const detail = d.foreignDetails.find(fd => fd.country === modalCountry);
+                dataCounts.push(detail ? detail.count : 0);
+            });
+        } else {
+            // 年度別
+            const yearlyAgg = {};
+            monthlyData.forEach(d => {
+                const fy = getFiscalYear(d.month);
+                if (!yearlyAgg[fy]) yearlyAgg[fy] = 0;
+                const detail = d.foreignDetails.find(fd => fd.country === modalCountry);
+                if (detail) {
+                    yearlyAgg[fy] += detail.count;
+                }
+            });
+            const fyLabels = Object.keys(yearlyAgg).sort();
+            fyLabels.forEach(fy => {
+                labels.push(`${fy}年度`);
+                dataCounts.push(yearlyAgg[fy]);
+            });
+        }
+
+        if (modalChartInstance) modalChartInstance.destroy();
+        const ctx = document.getElementById('modalChart').getContext('2d');
+        modalChartInstance = new Chart(ctx, {
+            type: modalPeriod === 'monthly' ? 'line' : 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `${modalCountry} (人)`,
+                    data: dataCounts,
+                    borderColor: '#9F7AEA',
+                    backgroundColor: modalPeriod === 'monthly' ? '#9F7AEA33' : '#9F7AEA',
+                    borderWidth: modalPeriod === 'monthly' ? 2 : 0,
+                    fill: modalPeriod === 'monthly',
+                    tension: 0.4,
+                    pointRadius: modalPeriod === 'monthly' ? 2 : 0,
+                    borderRadius: modalPeriod === 'yearly' ? 4 : 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: function(value) { return value.toLocaleString(); } } }
+                }
+            }
+        });
+    }
+
+    // --- 6. UI更新ロジック ---
     function switchTab(tab) {
         currentTab = tab;
         document.getElementById('tab-kenrokuen').classList.remove('active');
@@ -692,7 +876,10 @@
             topForeign.forEach((item, index) => {
                 const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-default';
                 const li = document.createElement('li');
-                li.className = 'ranking-item';
+                // モーダルを開くイベントを追加
+                li.className = 'ranking-item clickable';
+                li.onclick = () => openCountryModal(item.country);
+                
                 li.innerHTML = `
                     <div class="rank-badge ${rankClass}">${index + 1}</div>
                     <div class="ranking-name">${item.country}</div>
@@ -717,7 +904,6 @@
     }
 
     function updateInboundChart() {
-        // インバウンド指数データがある月（スプレッドシートにデータが存在する月）のみを抽出
         const validData = monthlyData.filter(d => d.foreignDetails && d.foreignDetails.length > 0);
         
         let chartSourceData = validData;
@@ -740,8 +926,8 @@
                 datasets: [{
                     label: 'インバウンド割合 (%)',
                     data: chartData,
-                    borderColor: '#9F7AEA', // グラフのカラーを紫系に
-                    backgroundColor: '#9F7AEA33',
+                    borderColor: '#4FD1C5', // トンマナに合わせて青緑系に変更
+                    backgroundColor: '#4FD1C533',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
@@ -755,7 +941,7 @@
                 scales: {
                     y: { 
                         beginAtZero: true, 
-                        max: 100, // 指数なので最大100%に固定
+                        max: 100,
                         ticks: { callback: function(value) { return value + '%'; } } 
                     }
                 }
@@ -886,7 +1072,7 @@
         }
     }
 
-    // --- 6. 起動（データ取得） ---
+    // --- 7. 起動（データ取得） ---
     window.onload = initData;
 
 </script>
