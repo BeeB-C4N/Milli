@@ -293,11 +293,11 @@
         /* 兼六園固有セクションの切り替え用 */
         .kenrokuen-only {
             display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
         body.tab-kenrokuen .kenrokuen-only {
-            display: block;
-        }
-        body.tab-kenrokuen .kenrokuen-only.grid-item {
             display: flex;
         }
 
@@ -358,38 +358,18 @@
             </div>
         </div>
 
-        <!-- 3. 年度別データ (チャートと表) -->
-        <div class="two-col-grid">
-            <div class="tifo-card">
-                <h2 class="card-title"><i class="fa-solid fa-chart-bar"></i> 年度別 入園者数推移</h2>
-                <div class="chart-container">
-                    <canvas id="yearlyChart"></canvas>
-                </div>
-            </div>
-
-            <div class="tifo-card">
-                <h2 class="card-title"><i class="fa-solid fa-table"></i> 年度別 データ表</h2>
-                <div class="table-responsive">
-                    <table id="yearlyTable">
-                        <thead>
-                            <tr>
-                                <th>年度</th>
-                                <th>入園者数(人)</th>
-                                <th>前年度比</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- JSで動的に生成 -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- 3. 年度別データ (チャート・全幅) -->
+        <div class="tifo-card">
+            <h2 class="card-title"><i class="fa-solid fa-chart-bar"></i> 年度別 入園者数推移</h2>
+            <div class="chart-container">
+                <canvas id="yearlyChart"></canvas>
             </div>
         </div>
 
         <!-- 4. 兼六園専用セクション -->
-        <div class="two-col-grid kenrokuen-only grid-item">
+        <div class="kenrokuen-only">
             <!-- フィルターコントロール (全幅) -->
-            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; background: var(--tifo-card-bg); padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid var(--tifo-card-border); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--tifo-card-bg); padding: 1rem 1.5rem; border-radius: 1.5rem; border: 1px solid var(--tifo-card-border); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);">
                 <div style="font-weight: bold; font-size: 1.1rem; color: var(--tifo-text);"><i class="fa-regular fa-calendar-check" style="color:var(--tifo-primary);"></i> 月別 インバウンド詳細</div>
                 <div class="ranking-controls">
                     <select id="select-year" onchange="updateRankingSection()"></select> 年
@@ -397,37 +377,40 @@
                 </div>
             </div>
 
-            <!-- 国別ランキング -->
-            <div class="tifo-card">
-                <h2 class="card-title"><i class="fa-solid fa-earth-asia"></i> 国別ランキング</h2>
-                <ul class="ranking-list" id="country-ranking">
-                    <!-- JSで動的に生成 -->
-                </ul>
-            </div>
+            <!-- 2カラムグリッド -->
+            <div class="two-col-grid">
+                <!-- 国別ランキング -->
+                <div class="tifo-card" style="margin-bottom: 0;">
+                    <h2 class="card-title"><i class="fa-solid fa-earth-asia"></i> 国別ランキング</h2>
+                    <ul class="ranking-list" id="country-ranking">
+                        <!-- JSで動的に生成 -->
+                    </ul>
+                </div>
 
-            <!-- インバウンド指数 -->
-            <div class="tifo-card">
-                <h2 class="card-title"><i class="fa-solid fa-plane"></i> インバウンド観光客指数</h2>
-                <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-                    <div style="font-size: 3rem; font-weight: 900; color: var(--tifo-primary); line-height: 1;" id="inbound-index-value">0%</div>
-                    <div style="color: var(--tifo-muted); margin-bottom: 1rem;">インバウンド割合</div>
-                    
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar" id="inbound-progress" style="width: 0%;">0%</div>
+                <!-- インバウンド指数 -->
+                <div class="tifo-card" style="margin-bottom: 0;">
+                    <h2 class="card-title"><i class="fa-solid fa-plane"></i> インバウンド観光客指数</h2>
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                        <div style="font-size: 3rem; font-weight: 900; color: var(--tifo-primary); line-height: 1;" id="inbound-index-value">0%</div>
+                        <div style="color: var(--tifo-muted); margin-bottom: 1rem;">インバウンド割合</div>
+                        
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar" id="inbound-progress" style="width: 0%;">0%</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--tifo-muted); margin-top: 0.5rem;">
+                            <span>国内: <span id="domestic-count">0</span>人</span>
+                            <span>海外: <span id="inbound-count">0</span>人</span>
+                        </div>
                     </div>
-                    
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--tifo-muted); margin-top: 0.5rem;">
-                        <span>国内: <span id="domestic-count">0</span>人</span>
-                        <span>海外: <span id="inbound-count">0</span>人</span>
+                    <div class="kpi-subtext" style="margin-top: 1rem; border-top: 1px solid var(--tifo-card-border); padding-top: 0.5rem;">
+                        ※ インバウンド指数 = 外国人入園者数 / (総入園者数)
                     </div>
                 </div>
-                <div class="kpi-subtext" style="margin-top: 1rem; border-top: 1px solid var(--tifo-card-border); padding-top: 0.5rem;">
-                    ※ インバウンド指数 = 外国人入園者数 / (総入園者数)
-                </div>
             </div>
 
-            <!-- 追加: インバウンド指数推移チャート (全幅) -->
-            <div class="tifo-card" style="grid-column: 1 / -1;">
+            <!-- インバウンド指数推移チャート (全幅) -->
+            <div class="tifo-card" style="margin-bottom: 0;">
                 <div class="card-header-flex">
                     <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> インバウンド観光客指数 推移</h2>
                     <div class="period-controls">
@@ -438,6 +421,25 @@
                 <div class="chart-container">
                     <canvas id="inboundChart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <!-- 5. 年度別データ表 (全幅、一番下) -->
+        <div class="tifo-card">
+            <h2 class="card-title"><i class="fa-solid fa-table"></i> 年度別 データ表</h2>
+            <div class="table-responsive">
+                <table id="yearlyTable">
+                    <thead>
+                        <tr>
+                            <th>年度</th>
+                            <th>入園者数(人)</th>
+                            <th>前年度比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JSで動的に生成 -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
