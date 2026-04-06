@@ -253,7 +253,23 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            max-height: 280px; /* カード内でスクロールさせるための高さ制限 */
+            overflow-y: auto;
+            padding-right: 5px;
         }
+        /* ランキングリスト用スクロールバー */
+        .ranking-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .ranking-list::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .ranking-list::-webkit-scrollbar-thumb {
+            background: #d1d5db; 
+            border-radius: 4px;
+        }
+        
         .ranking-item {
             display: flex;
             align-items: center;
@@ -871,8 +887,8 @@
             return;
         }
 
-        // Top 5 を表示
-        const topForeign = targetData.foreignDetails.slice(0, 5);
+        // 全件表示に変更（CSSでスクロール制御）
+        const topForeign = targetData.foreignDetails;
         if (topForeign.length === 0) {
             rankingList.innerHTML = '<li class="ranking-item"><div class="ranking-name" style="color:var(--tifo-muted);">外国人入園者データなし</div></li>';
         } else {
