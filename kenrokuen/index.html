@@ -451,10 +451,10 @@
         <div class="kenrokuen-only">
             <!-- フィルターコントロール (全幅) -->
             <div style="display: flex; justify-content: space-between; align-items: center; background: var(--tifo-card-bg); padding: 1rem 1.5rem; border-radius: 1.5rem; border: 1px solid var(--tifo-card-border); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);">
-                <div style="font-weight: bold; font-size: 1.1rem; color: var(--tifo-text);"><i class="fa-regular fa-calendar-check" style="color:var(--tifo-primary);"></i> 月別 インバウンド詳細</div>
+                <div style="font-weight: bold; font-size: 1.1rem; color: var(--tifo-text);"><i class="fa-regular fa-calendar-check" style="color:var(--tifo-primary);"></i> 月別・年度別 インバウンド詳細</div>
                 <div class="ranking-controls">
                     <select id="select-year" onchange="updateRankingSection()"></select> 年
-                    <select id="select-month" onchange="updateRankingSection()"></select> 月
+                    <select id="select-month" onchange="updateRankingSection()"></select>
                 </div>
             </div>
 
@@ -515,10 +515,8 @@
             <div class="table-responsive">
                 <table id="yearlyTable">
                     <thead>
-                        <tr>
-                            <th>年度</th>
-                            <th>入園者数(人)</th>
-                            <th>前年度比</th>
+                        <tr id="yearlyTableHeaderRow">
+                            <!-- JSで動的に生成 -->
                         </tr>
                     </thead>
                     <tbody>
@@ -696,10 +694,11 @@
         monthlyData.forEach(row => {
             const fy = getFiscalYear(row.month);
             if (!yearlyAgg[fy]) {
-                yearlyAgg[fy] = { kenrokuen: 0, kanazawa: 0 };
+                yearlyAgg[fy] = { kenrokuen: 0, kanazawa: 0, inbound: 0 };
             }
             yearlyAgg[fy].kenrokuen += row.kenrokuen;
             yearlyAgg[fy].kanazawa += row.kanazawa;
+            yearlyAgg[fy].inbound += row.inboundCount; // インバウンド総数を追加集計
         });
 
         let ytdKenrokuen = 0;
@@ -854,9 +853,15 @@
         for(let m = 1; m <= 12; m++) {
             const option = document.createElement('option');
             option.value = m;
-            option.textContent = m;
+            option.textContent = `${m}月`;
             monthSelect.appendChild(option);
         }
+        
+        // 年度オプション追加
+        const yearlyOption = document.createElement('option');
+        yearlyOption.value = 'yearly';
+        yearlyOption.textContent = '年度';
+        monthSelect.appendChild(yearlyOption);
 
         const latestDate = new Date(monthlyData[monthlyData.length - 1].month);
         yearSelect.value = latestDate.getFullYear();
@@ -867,12 +872,48 @@
         if (currentTab !== 'kenrokuen') return;
 
         const year = parseInt(document.getElementById('select-year').value);
-        const month = parseInt(document.getElementById('select-month').value);
+        const monthVal = document.getElementById('select-month').value;
 
-        const targetData = monthlyData.find(d => {
-            const dt = new Date(d.month);
-            return dt.getFullYear() === year && (dt.getMonth() + 1) === month;
-        });
+        let targetData = null;
+
+        if (monthVal === 'yearly') {
+            // 年度別（year年の4月 〜 翌年3月）の合計値を計算
+            let totalKenrokuen = 0;
+            let totalInbound = 0;
+            const foreignMap = {};
+
+            monthlyData.forEach(d => {
+                if (getFiscalYear(d.month) === year) {
+                    totalKenrokuen += d.kenrokuen;
+                    totalInbound += d.inboundCount;
+                    d.foreignDetails.forEach(fd => {
+                        if (!foreignMap[fd.country]) foreignMap[fd.country] = 0;
+                        foreignMap[fd.country] += fd.count;
+                    });
+                }
+            });
+
+            if (totalKenrokuen > 0) {
+                const foreignDetails = Object.keys(foreignMap).map(country => ({
+                    country: country,
+                    count: foreignMap[country]
+                })).sort((a, b) => b.count - a.count);
+
+                targetData = {
+                    kenrokuen: totalKenrokuen,
+                    inboundCount: totalInbound,
+                    inboundIndex: (totalInbound / totalKenrokuen) * 100,
+                    foreignDetails: foreignDetails
+                };
+            }
+        } else {
+            // 月別データを取得
+            const month = parseInt(monthVal);
+            targetData = monthlyData.find(d => {
+                const dt = new Date(d.month);
+                return dt.getFullYear() === year && (dt.getMonth() + 1) === month;
+            });
+        }
 
         const rankingList = document.getElementById('country-ranking');
         rankingList.innerHTML = '';
@@ -887,7 +928,7 @@
             return;
         }
 
-        // 全件表示に変更（CSSでスクロール制御）
+        // 全件表示（CSSでスクロール制御）
         const topForeign = targetData.foreignDetails;
         if (topForeign.length === 0) {
             rankingList.innerHTML = '<li class="ranking-item"><div class="ranking-name" style="color:var(--tifo-muted);">外国人入園者データなし</div></li>';
@@ -1059,6 +1100,14 @@
             }
         });
 
+        // テーブルヘッダーの切り替え
+        const theadTr = document.getElementById('yearlyTableHeaderRow');
+        if (currentTab === 'kenrokuen') {
+            theadTr.innerHTML = '<th>年度</th><th>入園者数(人)</th><th>前年度比</th><th>インバウンド(人)</th>';
+        } else {
+            theadTr.innerHTML = '<th>年度</th><th>入園者数(人)</th><th>前年度比</th>';
+        }
+
         const tbody = document.querySelector('#yearlyTable tbody');
         tbody.innerHTML = '';
         for (let i = fyLabels.length - 1; i >= 0; i--) { 
@@ -1077,11 +1126,21 @@
             }
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${fy}年度</td>
-                <td>${formatNum(count)}</td>
-                <td>${compareText}</td>
-            `;
+            if (currentTab === 'kenrokuen') {
+                const inboundCount = data.yearlyAgg[fy].inbound;
+                tr.innerHTML = `
+                    <td>${fy}年度</td>
+                    <td>${formatNum(count)}</td>
+                    <td>${compareText}</td>
+                    <td>${formatNum(inboundCount)}</td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td>${fy}年度</td>
+                    <td>${formatNum(count)}</td>
+                    <td>${compareText}</td>
+                `;
+            }
             tbody.appendChild(tr);
         }
 
