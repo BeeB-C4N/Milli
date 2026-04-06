@@ -739,9 +739,12 @@
         let labels = [];
         let dataCounts = [];
 
+        // 2019年1月以降のデータのみにフィルタリング
+        const filteredData = monthlyData.filter(d => new Date(d.month) >= new Date('2019/1/1'));
+
         // データ抽出
         if (modalPeriod === 'monthly') {
-            monthlyData.forEach(d => {
+            filteredData.forEach(d => {
                 const date = new Date(d.month);
                 labels.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
                 const detail = d.foreignDetails.find(fd => fd.country === modalCountry);
@@ -750,7 +753,7 @@
         } else {
             // 年度別
             const yearlyAgg = {};
-            monthlyData.forEach(d => {
+            filteredData.forEach(d => {
                 const fy = getFiscalYear(d.month);
                 if (!yearlyAgg[fy]) yearlyAgg[fy] = 0;
                 const detail = d.foreignDetails.find(fd => fd.country === modalCountry);
