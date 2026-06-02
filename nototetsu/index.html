@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>のと鉄道 ペルソナ・ダッシュボード</title>
+  <style>
+    :root {
+      --tifo-bg: #F7FAFC;
+      --tifo-text: #2D3748;
+      --tifo-muted: #718096;
+      --tifo-primary: #4FD1C5;
+      --tifo-primary-dark: #38B2AC;
+      --tifo-card-border: #E2E8F0;
+      --tifo-card-bg: #FFFFFF;
+      --tifo-soft-bg: #EDF2F7;
+      --tifo-green: #9AE6B4;
+      --tifo-red: #FEB2B2;
+      --tifo-yellow: #FFD700;
+      --tifo-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --tifo-shadow-hover: 0 18px 30px -8px rgba(79, 209, 197, 0.28);
+      --radius-xl: 1.5rem;
+      --font-sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "YuGothic", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(79, 209, 197, 0.20), transparent 28rem),
+        radial-gradient(circle at 92% 4%, rgba(154, 230, 180, 0.18), transparent 26rem),
+        var(--tifo-bg);
+      color: var(--tifo-text);
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+    button,input { font: inherit; }
+    .app { width: min(1480px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+    .hero {
+      position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,255,255,.78));
+      border-radius: 2rem; padding: clamp(28px, 5vw, 60px); margin-bottom: 24px;
+      box-shadow: var(--tifo-shadow); border: 1px solid var(--tifo-card-border);
+    }
+    .hero::before { content:""; position:absolute; width:380px; height:380px; right:-140px; top:-160px; background:rgba(79,209,197,.15); border-radius:9999px; }
+    .hero::after { content:"NOTO"; position:absolute; right: clamp(20px, 5vw, 64px); bottom:-36px; color:rgba(79,209,197,.16); font-weight:900; font-size:clamp(68px,14vw,180px); line-height:1; letter-spacing:-.08em; }
+    .eyebrow { display:inline-flex; align-items:center; gap:.65rem; padding:.45rem .85rem; border-radius:9999px; color:var(--tifo-primary-dark); background:rgba(79,209,197,.12); border:1px solid rgba(79,209,197,.28); font-size:.82rem; font-weight:800; }
+    .eyebrow::before { content:""; width:.55rem; height:.55rem; border-radius:9999px; background:var(--tifo-primary); box-shadow:0 0 0 5px rgba(79,209,197,.16); }
+    h1 { position:relative; z-index:1; font-size:clamp(2rem,5vw,4rem); line-height:1.14; letter-spacing:-.06em; margin:1rem 0; max-width:980px; font-weight:900; }
+    .hero p { position:relative; z-index:1; max-width:920px; color:var(--tifo-muted); margin:0; font-size:clamp(.96rem,1.5vw,1.08rem); }
+    .toolbar { position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-top:1.75rem; }
+    .search-wrap { flex: 1 1 320px; display:flex; align-items:center; gap:.65rem; padding:.75rem 1rem; border:1px solid var(--tifo-card-border); border-radius:9999px; background:white; }
+    .search-wrap span { color: var(--tifo-primary-dark); font-weight: 800; }
+    .search-wrap input { width:100%; border:0; outline:none; background:transparent; color:var(--tifo-text); }
+    .btn { background-color:var(--tifo-primary); color:white; font-weight:800; padding:.75rem 1.5rem; border-radius:9999px; border:0; border-bottom:4px solid var(--tifo-primary-dark); transition:all .2s ease; cursor:pointer; }
+    .btn:hover { transform:translateY(-2px); box-shadow:0 6px 12px -3px rgba(79,209,197,.4); }
+    .btn:active { transform:translateY(2px); border-bottom-width:2px; }
+    .btn.secondary { background-color:white; color:var(--tifo-text); border:1px solid var(--tifo-card-border); border-bottom:4px solid #CBD5E0; }
+    .layout { display:grid; grid-template-columns:minmax(280px,390px) 1fr; gap:24px; align-items:start; }
+    .panel { background-color:var(--tifo-card-bg); border-radius:var(--radius-xl); padding:1.5rem; box-shadow:var(--tifo-shadow); border:1px solid var(--tifo-card-border); }
+    .sidebar { position: sticky; top:18px; max-height:calc(100vh - 36px); overflow:auto; }
+    .sidebar h2,.section-title { line-height:1.25; letter-spacing:-.04em; font-weight:900; }
+    .sidebar h2 { font-size:1.1rem; margin:0 0 1rem; }
+    .persona-list { display:grid; gap:.85rem; }
+    .persona-card { width:100%; text-align:left; cursor:pointer; border:1px solid var(--tifo-card-border); border-radius:1.25rem; padding:1rem; background:white; transition:all .2s ease; color:inherit; box-shadow:0 4px 9px -5px rgba(0,0,0,.10); }
+    .persona-card:hover { transform:translateY(-2px); border-color:rgba(79,209,197,.70); box-shadow:var(--tifo-shadow-hover); }
+    .persona-card.active { background:linear-gradient(135deg,rgba(79,209,197,.16),rgba(154,230,180,.14)),white; border-color:var(--tifo-primary); box-shadow:0 12px 22px -12px rgba(56,178,172,.50); }
+    .persona-card .top { display:flex; justify-content:space-between; gap:.8rem; align-items:flex-start; margin-bottom:.7rem; }
+    .persona-card strong { display:block; font-size:.94rem; line-height:1.5; font-weight:850; }
+    .persona-card small { display:block; color:var(--tifo-muted); margin-top:.25rem; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; font-weight:900; font-size:.7rem; letter-spacing:.04em; padding:.28rem .55rem; border-radius:9999px; background:rgba(79,209,197,.18); color:var(--tifo-primary-dark); border:1px solid rgba(79,209,197,.34); }
+    .badge.medium { background:rgba(255,215,0,.18); color:#975A16; border-color:rgba(255,215,0,.44); }
+    .badge.low { background:rgba(254,178,178,.28); color:#C53030; border-color:rgba(254,178,178,.70); }
+    .mini-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:.65rem; }
+    .mini-meta div { border-radius:.9rem; background:#F7FAFC; padding:.55rem .35rem; text-align:center; border:1px solid var(--tifo-card-border); }
+    .mini-meta b { display:block; font-size:.95rem; line-height:1.1; }
+    .mini-meta span { display:block; font-size:.66rem; color:var(--tifo-muted); }
+    main { display:grid; gap:24px; }
+    .summary-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:.8rem; }
+    .kpi { border:1px solid var(--tifo-card-border); border-radius:1.1rem; padding:.9rem; background:white; box-shadow:0 8px 14px -12px rgba(0,0,0,.20); }
+    .kpi span { color:var(--tifo-muted); font-size:.75rem; display:block; line-height:1.35; font-weight:700; }
+    .kpi b { display:block; margin-top:.35rem; font-size:clamp(1.05rem,2vw,1.65rem); letter-spacing:-.04em; line-height:1.1; font-weight:900; }
+    .persona-head { overflow:hidden; position:relative; background:radial-gradient(circle at 92% 0%, rgba(79,209,197,.18), transparent 24rem), white; }
+    .persona-head::before { content:""; position:absolute; inset:0; background-image:linear-gradient(90deg,rgba(226,232,240,.50) 1px,transparent 1px),linear-gradient(rgba(226,232,240,.45) 1px,transparent 1px); background-size:32px 32px; mask-image:linear-gradient(to bottom,rgba(0,0,0,.28),transparent 75%); pointer-events:none; }
+    .persona-head > * { position:relative; }
+    .persona-head-grid { display:grid; grid-template-columns:1fr auto; gap:1.5rem; align-items:start; }
+    .persona-title { margin:0; font-size:clamp(1.7rem,4vw,3rem); letter-spacing:-.065em; line-height:1.18; font-weight:900; }
+    .nickname { color:var(--tifo-primary-dark); font-weight:900; margin-top:.5rem; }
+    .narrative { margin:1rem 0 0; color:#4A5568; max-width:960px; }
+    .confidence-box { min-width:170px; border:1px solid var(--tifo-card-border); border-radius:1.25rem; background:rgba(247,250,252,.85); padding:1rem; }
+    .confidence-box .num { font-size:2.2rem; line-height:1; font-weight:900; letter-spacing:-.06em; color:var(--tifo-primary-dark); }
+    .confidence-box .label { color:var(--tifo-muted); font-size:.82rem; margin-top:.3rem; }
+    .kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:.8rem; margin-top:1.5rem; }
+    .grid-2 { display:grid; grid-template-columns:minmax(360px,.9fr) 1.1fr; gap:24px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+    .section-title { font-size:1.45rem; margin:0 0 1rem; }
+    .section-sub { color:var(--tifo-muted); margin:-.55rem 0 1rem; font-size:.9rem; }
+    .chart-wrap { display:grid; place-items:center; padding:.5rem 0 0; }
+    canvas#radar { width:min(100%,520px); height:auto; max-height:440px; }
+    .bar-list { display:grid; gap:.85rem; }
+    .bar-row { display:grid; gap:.38rem; }
+    .bar-label { display:flex; justify-content:space-between; gap:1rem; font-size:.9rem; }
+    .bar-label b { font-weight:850; }
+    .bar-track { background-color:#EDF2F7; border-radius:9999px; overflow:hidden; height:1.25rem; }
+    .bar-fill { background-color:var(--tifo-primary); height:100%; border-radius:9999px; transition:width .5s ease-in-out; }
+    .profile-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.8rem; }
+    .profile-item { border:1px solid var(--tifo-card-border); border-radius:1rem; padding:.9rem; background:#F7FAFC; }
+    .profile-item span { display:block; color:var(--tifo-muted); font-size:.74rem; margin-bottom:.25rem; font-weight:800; }
+    .profile-item b { display:block; font-weight:800; line-height:1.55; }
+    .tag-list { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .tag { padding:.45rem .7rem; border-radius:9999px; background:rgba(79,209,197,.13); border:1px solid rgba(79,209,197,.30); color:var(--tifo-primary-dark); font-weight:850; font-size:.78rem; }
+    .quote { border-left:5px solid var(--tifo-primary); padding:.8rem 0 .8rem 1rem; color:#4A5568; background:linear-gradient(90deg,rgba(79,209,197,.10),transparent); border-radius:0 1rem 1rem 0; }
+    .tabs { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.9rem; }
+    .tab { padding:.5rem .75rem; border:0; border-bottom:3px solid transparent; font-weight:800; color:#A0AEC0; transition:all .2s ease; background:transparent; cursor:pointer; border-radius:.75rem .75rem 0 0; }
+    .tab:hover { background-color:#F7FAFC; color:#4A5568; }
+    .tab.active { color:var(--tifo-primary-dark); border-bottom-color:var(--tifo-primary); background:#F7FAFC; }
+    .list-block { display:grid; gap:.7rem; margin:0; padding:0; list-style:none; }
+    .list-block li { position:relative; padding:.8rem .9rem .8rem 2.35rem; border:1px solid var(--tifo-card-border); border-radius:1rem; background:#F7FAFC; }
+    .list-block li::before { content:""; position:absolute; left:1rem; top:1.45rem; width:.5rem; height:.5rem; border-radius:9999px; background:var(--tifo-primary); }
+    .comparison-table { width:100%; border-collapse:separate; border-spacing:0 .55rem; }
+    .comparison-table th { text-align:left; color:var(--tifo-muted); font-size:.78rem; padding:.25rem .6rem; }
+    .comparison-table td { background:#F7FAFC; border-top:1px solid var(--tifo-card-border); border-bottom:1px solid var(--tifo-card-border); padding:.7rem .6rem; font-weight:700; }
+    .comparison-table td:first-child { border-left:1px solid var(--tifo-card-border); border-radius:.9rem 0 0 .9rem; }
+    .comparison-table td:last-child { border-right:1px solid var(--tifo-card-border); border-radius:0 .9rem .9rem 0; }
+    .chat-panel { min-height:640px; display:grid; grid-template-rows:auto 1fr auto auto; overflow:hidden; padding:0; }
+    .chat-head { padding:1.2rem 1.4rem; border-bottom:1px solid var(--tifo-card-border); background:white; display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .chat-head h2 { margin:0; font-size:1.1rem; line-height:1.35; font-weight:900; }
+    .chat-head small { display:block; color:var(--tifo-muted); margin-top:.2rem; }
+    .chat-messages { padding:1.4rem; display:flex; flex-direction:column; gap:.9rem; overflow:auto; max-height:520px; background:radial-gradient(circle at 10% 12%, rgba(79,209,197,.10), transparent 18rem), #F7FAFC; }
+    .msg { max-width:min(84%,780px); padding:.85rem 1rem; border-radius:1.15rem; border:1px solid var(--tifo-card-border); white-space:pre-wrap; box-shadow:0 8px 16px -14px rgba(0,0,0,.20); }
+    .msg.user { margin-left:auto; background:var(--tifo-primary); color:white; border-color:var(--tifo-primary-dark); border-bottom-right-radius:.35rem; font-weight:700; }
+    .msg.bot { margin-right:auto; background:white; color:var(--tifo-text); border-bottom-left-radius:.35rem; }
+    .quick-questions { display:flex; flex-wrap:wrap; gap:.5rem; padding:0 1.4rem 1rem; background:#F7FAFC; }
+    .quick { border:1px solid var(--tifo-card-border); background:white; color:var(--tifo-text); border-radius:9999px; padding:.5rem .75rem; font-size:.78rem; cursor:pointer; font-weight:850; transition:all .2s ease; }
+    .quick:hover { border-color:var(--tifo-primary); color:var(--tifo-primary-dark); transform:translateY(-1px); }
+    .chat-form { display:flex; gap:.65rem; padding:1rem; border-top:1px solid var(--tifo-card-border); background:white; }
+    .chat-form input { flex:1; min-width:0; border:1px solid var(--tifo-card-border); border-radius:9999px; padding:.78rem 1rem; background:white; outline:none; }
+    .chat-form input:focus { border-color:var(--tifo-primary); box-shadow:0 0 0 4px rgba(79,209,197,.16); }
+    .chat-form button { background-color:var(--tifo-primary); color:white; font-weight:900; padding:.75rem 1.25rem; border-radius:9999px; border:0; border-bottom:4px solid var(--tifo-primary-dark); cursor:pointer; }
+    .footer-note { color:var(--tifo-muted); font-size:.76rem; margin-top:.9rem; }
+    .empty { padding:1.2rem; color:var(--tifo-muted); text-align:center; background:#F7FAFC; border-radius:1rem; border:1px solid var(--tifo-card-border); }
+    .modal-overlay { position:fixed; inset:0; background-color:rgba(45,55,72,.75); display:flex; align-items:center; justify-content:center; z-index:50; transition:opacity .3s ease; }
+    .modal-overlay.hidden { opacity:0; pointer-events:none; }
+    .modal-content { background:white; padding:2rem; border-radius:1.5rem; max-width:90%; width:720px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04); }
+    .modal-body-scrollable { flex-grow:1; overflow-y:auto; min-height:0; }
+    .custom-scrollbar::-webkit-scrollbar,.sidebar::-webkit-scrollbar,.chat-messages::-webkit-scrollbar,.modal-body-scrollable::-webkit-scrollbar { width:8px; }
+    .custom-scrollbar::-webkit-scrollbar-track,.sidebar::-webkit-scrollbar-track,.chat-messages::-webkit-scrollbar-track,.modal-body-scrollable::-webkit-scrollbar-track { background:#f1f1f1; border-radius:10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb,.chat-messages::-webkit-scrollbar-thumb,.modal-body-scrollable::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:10px; }
+    @media (max-width: 1180px) { .layout,.grid-2,.grid-3 { grid-template-columns:1fr; } .sidebar { position:static; max-height:none; } .persona-list { grid-template-columns:repeat(2,1fr); } .kpis,.summary-grid { grid-template-columns:repeat(3,1fr); } }
+    @media (max-width: 720px) { .app { width:min(100% - 20px,1480px); padding-top:10px; } .hero { border-radius:1.5rem; padding:1.5rem; } .toolbar .btn { width:100%; } .persona-list { grid-template-columns:1fr; } .persona-head-grid { grid-template-columns:1fr; } .kpis,.summary-grid,.profile-grid { grid-template-columns:1fr 1fr; } .chat-head { align-items:flex-start; flex-direction:column; } .msg { max-width:94%; } }
+    @media print { body { background:#fff; } .toolbar,.sidebar,.chat-form,.quick-questions,.btn { display:none !important; } .app { width:100%; padding:0; } .hero,.panel { box-shadow:none; background:#fff; break-inside:avoid; } .layout,.grid-2,.grid-3 { display:block; } .panel { margin:0 0 14px; } .chat-panel { min-height:0; } .chat-messages { max-height:none; overflow:visible; } canvas#radar { max-width:420px; } @page { margin:12mm; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="eyebrow">のと鉄道 観光アンケート / Persona Dashboard</div>
+      <h1>のと鉄道の乗客像を、選び、眺め、対話する。</h1>
+      <p>アンケート447件から、のと鉄道を「移動手段」ではなく、車窓・復興応援・親子体験・食と温泉・公共交通導線として読み解くダッシュボードです。</p>
+      <div class="toolbar">
+        <label class="search-wrap">
+          <span>検索</span>
+          <input id="searchInput" type="search" placeholder="例：復興、車窓、ポケモン、温泉、バス、食..." />
+        </label>
+        <button class="btn secondary" id="openInsightBtn">全体インサイト</button>
+        <button class="btn secondary" id="resetChatBtn">チャットをリセット</button>
+        <button class="btn" onclick="window.print()">印刷・PDF化</button>
+      </div>
+    </header>
+
+    <section class="panel" style="margin-bottom:24px;">
+      <h2 class="section-title">全体サマリー</h2>
+      <p class="section-sub">全447件の集計。金額はレンジ回答の中央値換算。</p>
+      <div id="overallKpis" class="summary-grid"></div>
+    </section>
+
+    <div class="layout">
+      <aside class="panel sidebar">
+        <h2>ペルソナを選択</h2>
+        <div id="personaList" class="persona-list"></div>
+        <p class="footer-note">※ nが小さいものは exploratory として扱い、施策仮説として読みます。</p>
+      </aside>
+
+      <main>
+        <section class="panel persona-head">
+          <div class="persona-head-grid">
+            <div>
+              <div id="confidenceBadge" class="badge">HIGH</div>
+              <h2 id="personaName" class="persona-title"></h2>
+              <div id="personaNickname" class="nickname"></div>
+              <p id="personaNarrative" class="narrative"></p>
+            </div>
+            <div class="confidence-box">
+              <div id="supportN" class="num"></div>
+              <div id="supportShare" class="label"></div>
+              <div id="supportConfidence" class="label"></div>
+            </div>
+          </div>
+          <div id="kpiGrid" class="kpis"></div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel">
+            <h2 class="section-title">志向性レーダー</h2>
+            <p class="section-sub">目的・交通・施設種別・自由記述から作った 0〜100 スコア。</p>
+            <div class="chart-wrap"><canvas id="radar" width="560" height="480"></canvas></div>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">行動・接点ランキング</h2>
+            <p class="section-sub">目的、情報源、交通、前後の立ち寄り先。</p>
+            <div id="dynamicBars" class="bar-list"></div>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel">
+            <h2 class="section-title">合成人格プロフィール</h2>
+            <div id="profileGrid" class="profile-grid"></div>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">心理・痛点・訴求</h2>
+            <div class="tabs" id="insightTabs"></div>
+            <ul id="insightList" class="list-block"></ul>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel">
+            <h2 class="section-title">Jobs To Be Done</h2>
+            <div class="tabs" id="jobTabs"></div>
+            <ul id="jobList" class="list-block"></ul>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">推奨アクション</h2>
+            <ul id="actionList" class="list-block"></ul>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel">
+            <h2 class="section-title">代表キーワード</h2>
+            <div id="keywordTags" class="tag-list"></div>
+            <div style="height:16px"></div>
+            <h2 class="section-title" style="font-size:1.1rem;">サンプルボイス</h2>
+            <div id="sampleVoice" class="quote"></div>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">ペルソナ比較</h2>
+            <div style="overflow:auto;">
+              <table class="comparison-table" id="comparisonTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="chat-head">
+            <div>
+              <h2 id="chatTitle">ペルソナチャット</h2>
+              <small>このチャットは埋め込みJSONから返す簡易ルールベースです。APIキー不要でそのまま動きます。</small>
+            </div>
+            <button class="btn secondary" id="copyPromptBtn">AI用プロンプトをコピー</button>
+          </div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="quick-questions" id="quickQuestions"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" placeholder="例：どんな情報発信に反応しますか？ 不満点は？ 消費を増やすには？" autocomplete="off" />
+            <button type="submit">送信</button>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="insightModal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:1rem;">
+        <h2 class="section-title" style="margin:0;">全体インサイト</h2>
+        <button class="btn secondary" id="closeInsightBtn">閉じる</button>
+      </div>
+      <div class="modal-body-scrollable custom-scrollbar" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const DATA = {"schema_version": "2.1", "generated_for": {"dataset_name": "のと鉄道 観光アンケートデータ", "user_request_summary": "のと鉄道データを分析し、ペルソナごとのダッシュボードを作成する", "segment": "のと鉄道回答者全体", "language": "ja"}, "data_overview": {"row_count": 447, "column_count": 43, "used_row_count": 447, "excluded_row_count": 0, "unit_of_analysis": "回答者", "important_columns": ["施設", "今回はどなたと石川県を訪れていますか？", "今回の石川県の訪問目的は何ですか？（複数選択可）", "石川県外から訪れた方にお聞きします。今回は主にどのような交通手段で石川県に来られましたか。※2つまでお答えください", "次に、 当施設  を訪れる際に利用した主な交通手段をお答えください。※2つまでお答えください", "前の設問で「自家用車」「徒歩」以外を選択された方にお聞きします。当該の交通手段をお使いいただいた満足度をお聞かせください。", "今回の旅行またはお出かけにおける、石川県内での具体的な宿泊費をお答えください。（予定でも可/１人あたり）", "今回の旅行またはお出かけにおける石川県内での具体的な交通費をお答えください。（予定でも可/１人あたり）\n※石川県外からの交通費、石川県内での交通費を含む。", "今回の旅行またはお出かけにおける、石川県内での具体的な現地消費額をお答えください。（予定でも可/１人あたり）\n※飲食、買い物、体験・観光などの消費額合計\n※宿泊費、交通費を除く", "これまでに   当施設   には何度訪れたことがありますか。", "今回   当施設   を訪れる際に参考にした情報源は何ですか？（複数選択可）", "当施設    における、消費総額をお答えください。（予定でも可/１人あたり）", "当施設 における、商品・サービスの満足度をお答えください", "当施設   における、施設全体の満足度をお答えください。", "当施設   において、不便を感じたり困ったことはありましたか。", "あなたは石川県への旅行または 当施設 へのお出かけを、どのくらい家族や友人に薦めたいと思いますか。 0（全く薦めたくない）～10（ぜひ薦めたい）でお答えください。", "今後、再び石川県を訪れたいと思いますか", "性別をお答えください", "生まれた年をお答えください", "お住いの都道府県をお答えください", "世帯年収をお答えください", "旅全体の総合満足度を教えてください。", "石川県への旅行を、どのくらい家族や友人に勧めたいと薦めたいと思いますか。\n０（まったく薦めたくない）～１０（ぜひ薦めたい）でお答え下さい。", "今回の旅行またはお出かけにおいて、特に人に薦めたいと感じたものとその理由について具体的に教えてください。"], "free_text_columns": ["上記満足度の理由について、具体的に教えてください", "上記名称リストにない場合について、具体的にお答えください。(前)", "上記名称リストにない場合について、具体的にお答えください。(後)", "上記満足度の理由につい具体的に教えてください。(サービス)", "上記満足度の理由につい具体的に教えてください。(施設全体)", "上記不便を感じたり、困ったことについて具体的に教えてください", "あなたが求めている   当施設   の飲食、土産、アクティビティについて、ご自由にご意見をお聞かせください", "あなたが求めている石川県の飲食、土産、アクティビティについて、ご自由にご意見をお聞かせください。\n\n(※必須項目です。無ければ「特になし」とご記入ください)", "今回の旅行またはお出かけにおいて、特に人に薦めたいと感じたものとその理由について具体的に教えてください。"], "numeric_columns": ["生まれた年をお答えください", "facility_nps", "trip_nps", "lodging_yen", "transport_yen", "local_spend_yen", "facility_spend_yen"], "categorical_columns": ["施設", "全行程での宿泊数をお答えください（石川県以外での宿泊も含みます）", "石川県内での宿泊数をお答えください", "石川県内での宿泊エリアをお答えください", "今回はどなたと石川県を訪れていますか？", "今回の石川県の訪問目的は何ですか？（複数選択可）", "石川県外から訪れた方にお聞きします。今回は主にどのような交通手段で石川県に来られましたか。※2つまでお答えください", "次に、 当施設  を訪れる際に利用した主な交通手段をお答えください。※2つまでお答えください", "前の設問で「自家用車」「徒歩」以外を選択された方にお聞きします。当該の交通手段をお使いいただいた満足度をお聞かせください。", "これまでに   当施設   には何度訪れたことがありますか。", "今回   当施設   を訪れる際に参考にした情報源は何ですか？（複数選択可）", "当施設 における、商品・サービスの満足度をお答えください", "当施設   における、施設全体の満足度をお答えください。", "当施設   において、不便を感じたり困ったことはありましたか。", "今後、再び石川県を訪れたいと思いますか", "性別をお答えください", "お住いの都道府県をお答えください", "世帯年収をお答えください", "旅全体の総合満足度を教えてください。"], "data_quality_notes": ["金額はレンジ回答の中央値に変換した概算値", "複数選択はカンマ区切りとして分割", "自由記述は辞書ベースのキーワードスコアで簡易集計", "個人を特定しうる市区町村等はペルソナ個票には使用せず、集計のみで扱った"]}, "overall": {"row_count": 447, "facility_mix": {"のと鉄道（通常）": 85.2, "のと鉄道 POK?MON with YOUトレイン": 14.3, "のと鉄道（震災語り部列車）": 0.4}, "top_companions": {"自分ひとり": 46.3, "夫婦2人": 14.8, "友人": 11.4, "小学生以下連れの家族": 6.0, "親": 4.9, "恋人": 4.0}, "top_purposes": {"地元の美味しいものを食べる": 44.3, "温泉や露天風呂": 29.3, "まちあるき、都市散策": 28.2, "名所、旧跡の観光": 26.0, "花見や紅葉などの自然鑑賞": 15.4, "宿でのんびり過ごす": 11.9, "友人・親戚を訪ねる": 10.3, "買い物、アウトレット": 8.7}, "top_info_sources": {"インターネット・アプリ": 55.5, "友人・知人": 22.6, "観光パンフレット・ポスター": 18.3, "新聞・雑誌・ガイドブック": 15.7, "X(旧：Twitter)": 15.4, "Instagram": 12.8, "観光展・物産展": 8.3, "観光連盟やDMOのHP": 7.6}, "top_transport_to_facility": {"在来線": 67.3, "路線バス": 19.5, "自家用車": 13.6, "徒歩": 7.4, "旅行会社ツアーバス": 6.5, "レンタカー": 4.3, "タクシー": 1.8, "レンタサイクル": 0.7}, "top_prefectures": {"東京都": 16.3, "石川県": 15.7, "大阪府": 10.1, "神奈川県": 9.2, "愛知県": 8.7, "埼玉県": 4.9, "富山県": 4.7, "兵庫県": 3.8}, "top_previous_places": {"能登食祭市場": 14.5, "輪島朝市": 6.5, "千里浜なぎさドライブウェイ": 6.5, "のとじま水族館": 5.4, "道の駅のとじま": 4.5, "和倉温泉": 2.0, "金沢駅": 1.6, "能登鹿島駅": 0.7, "道の駅あなみず": 0.7, "のと鉄道": 0.7}, "top_next_places": {"能登食祭市場": 9.6, "輪島朝市": 7.4, "千里浜なぎさドライブウェイ": 5.4, "のとじま水族館": 4.5, "道の駅のとじま": 3.8, "和倉温泉": 5.1, "穴水駅": 1.3, "金沢駅": 1.1, "金沢": 1.1, "能登空港": 0.9}, "summary_kpi": {"trip_total_spend_median_yen": 34500, "lodging_spend_median_yen": 7500, "transport_spend_median_yen": 7500, "local_spend_median_yen": 7500, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.21, "facility_satisfaction_mean": 4.26, "trip_satisfaction_mean": 4.46, "facility_nps_mean": 8.0, "facility_nps_score": 26.6, "trip_nps_mean": 8.6, "trip_nps_score": 49.2, "revisit_within_1year_pct": 53.2, "inconvenience_pct": 13.0}}, "segment_definition": {"description": "のと鉄道に関する回答者447件を対象。施設列には通常列車、POKÉMON with YOUトレイン、震災語り部列車が含まれる。", "filters_applied": [{"column": "施設", "condition": "のと鉄道関連の回答を全件使用", "inferred": false}], "confidence": "high", "notes": ["ユーザー指定に基づき全件を使用。特定セグメント抽出は行っていない。"]}, "scoring_method": {"score_scale": "0-100", "axes": [{"key": "rail", "label_ja": "鉄道体験", "description": "鉄道体験への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "scenery", "label_ja": "車窓・景色", "description": "車窓・景色への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "recovery", "label_ja": "復興応援", "description": "復興応援への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "family", "label_ja": "親子・同行者", "description": "親子・同行者への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "food", "label_ja": "食・土産", "description": "食・土産への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "onsen", "label_ja": "温泉・宿", "description": "温泉・宿への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "mobility", "label_ja": "移動設計", "description": "移動設計への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}, {"key": "local_repeat", "label_ja": "近隣再訪", "description": "近隣再訪への関心・志向の強さ", "signals_used": ["訪問目的", "交通手段", "同行者", "施設種別", "自由記述キーワード", "再訪経験"]}], "method_summary": "辞書ベースの0-100スコアを作成し、POKÉMON/復興/鉄道景色/食温泉/公共交通/近隣再訪などの優先ルールでペルソナを分類した。", "reproducibility_notes": ["金額レンジは中央値に変換", "スコアは目的・交通・自由記述のキーワード有無に重みを付与", "分類は再現可能なルールベース"]}, "visualization_config": {"app_title": "のと鉄道 ペルソナ・ダッシュボード", "app_subtitle": "観光アンケート447件から、のと鉄道の体験価値・痛点・回遊導線をペルソナ別に可視化", "theme": "tifo", "primary_color": "#4FD1C5", "radar_axes": [{"key": "rail", "label_ja": "鉄道体験", "max": 100}, {"key": "scenery", "label_ja": "車窓・景色", "max": 100}, {"key": "recovery", "label_ja": "復興応援", "max": 100}, {"key": "family", "label_ja": "親子・同行者", "max": 100}, {"key": "food", "label_ja": "食・土産", "max": 100}, {"key": "onsen", "label_ja": "温泉・宿", "max": 100}, {"key": "mobility", "label_ja": "移動設計", "max": 100}, {"key": "local_repeat", "label_ja": "近隣再訪", "max": 100}], "kpi_cards": [{"key": "trip_total_spend_median_yen", "label_ja": "旅行総消費中央値", "format": "yen"}, {"key": "facility_spend_median_yen", "label_ja": "施設消費中央値", "format": "yen"}, {"key": "facility_nps_score", "label_ja": "施設NPS", "format": "score"}, {"key": "trip_nps_score", "label_ja": "旅全体NPS", "format": "score"}, {"key": "revisit_within_1year_pct", "label_ja": "1年以内再訪意向", "format": "pct"}, {"key": "inconvenience_pct", "label_ja": "不便あり", "format": "pct"}], "bar_sections": [{"key": "top_purposes", "label_ja": "訪問目的"}, {"key": "top_info_sources", "label_ja": "情報源"}, {"key": "top_transport_to_facility", "label_ja": "施設までの交通"}, {"key": "top_previous_places", "label_ja": "前に訪れた場所"}, {"key": "top_next_places", "label_ja": "後に訪れる場所"}], "chat_enabled": true}, "personas": [{"persona_id": "food_onsen_noto_roundtrip", "name_ja": "食と温泉を組み合わせる能登周遊トラベラー", "nickname": "湯と海鮮の編集者・佐伯さん", "archetype_id": "food_onsen_noto_roundtrip", "one_line_summary": "のと鉄道を、和倉温泉・食・まち歩き・周辺観光と組み合わせて楽しむ層。", "data_support": {"n": 116, "share_pct": 26.0, "confidence": "high", "confidence_note": "nが50以上で特徴が明確"}, "synthetic_profile": {"age_core": "20代21.6%、30代18.1%、60代14.7%", "household_income": "上位: 400万円以上 500万円未満12.9%、700万円以上 800万円未満10.3%、200万円以上 300万円未満9.5%", "source_region": "首都圏35.3%、中京18.1%、関西16.4%、北陸15.5%", "companion": "上位: 自分ひとり37.1%、夫婦2人17.2%、友人12.1%、親7.8%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、千里浜なぎさドライブウェイ、のとじま水族館、千里浜なぎさドライブウェイ、輪島朝市、能登食祭市場", "typical_facilities": ["のと鉄道（通常）"], "typical_behavior": ["地元の美味しいものを食べる", "温泉や露天風呂", "名所、旧跡の観光", "まちあるき、都市散策", "宿でのんびり過ごす"]}, "data_points": {"trip_total_spend_median_yen": 47500, "lodging_spend_median_yen": 15000, "transport_spend_median_yen": 15000, "local_spend_median_yen": 15000, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.1, "facility_satisfaction_mean": 4.17, "trip_satisfaction_mean": 4.47, "facility_nps_mean": 7.86, "facility_nps_score": 19.8, "trip_nps_mean": 8.6, "trip_nps_score": 50.9, "revisit_within_1year_pct": 53.4, "inconvenience_pct": 8.6, "top_purposes": {"地元の美味しいものを食べる": 82.8, "温泉や露天風呂": 50.0, "名所、旧跡の観光": 33.6, "まちあるき、都市散策": 29.3, "宿でのんびり過ごす": 21.6, "買い物、アウトレット": 12.9}, "top_info_sources": {"インターネット・アプリ": 57.8, "観光パンフレット・ポスター": 30.2, "友人・知人": 25.9, "X(旧：Twitter)": 12.1, "新聞・雑誌・ガイドブック": 12.1, "Instagram": 11.2}, "top_transport_to_ishikawa": {"新幹線": 42.2, "在来線": 40.5, "飛行機": 17.2, "県外から訪れていない（石川県内在住）": 10.3, "旅行会社ツアーバス": 9.5}, "top_transport_to_facility": {"在来線": 62.9, "路線バス": 19.8, "徒歩": 13.8, "自家用車": 11.2, "旅行会社ツアーバス": 9.5}, "top_previous_places": {"能登食祭市場": 19.8, "千里浜なぎさドライブウェイ": 11.2, "のとじま水族館": 7.8, "道の駅のとじま": 5.2, "和倉温泉": 1.7, "能登空港": 1.7, "金沢城": 1.7, "羽咋市歴史民俗資料館": 0.9}, "top_next_places": {"千里浜なぎさドライブウェイ": 10.3, "輪島朝市": 8.6, "能登食祭市場": 8.6, "のとじま水族館": 6.9, "和倉温泉": 7.8, "金沢": 2.6, "四季彩々、かもめ食堂": 1.7, "訪れない": 0.9}, "top_facilities": {"のと鉄道（通常）": 100.0}, "top_companions": {"自分ひとり": 37.1, "夫婦2人": 17.2, "友人": 12.1, "親": 7.8, "恋人": 6.9}, "top_prefectures": {"東京都": 17.2, "石川県": 12.9, "愛知県": 12.1, "神奈川県": 11.2, "大阪府": 10.3, "岐阜県": 4.3}}, "orientation_scores_0_100": {"rail": 37.8, "scenery": 25.8, "recovery": 0.0, "family": 13.3, "food": 72.2, "onsen": 62.9, "mobility": 23.9, "local_repeat": 19.6}, "narrative": "この層にとって、のと鉄道は食と温泉をつなぐ旅の導線である。ローカル線の体験も楽しむが、最終的な満足は、海鮮、温泉、宿、まち歩きがうまくつながったかで決まる。旅全体の消費中央値も高く、駅や列車だけでなく、前後の飲食・土産・宿泊へ自然に誘導できる余地が大きい。", "psychology": ["土地の美味しいものと温泉を外したくない", "交通と食事のタイミングが合うと満足度が上がる", "旅程全体のつながりを重視する", "のと鉄道を能登らしい移動体験として楽しみたい"], "jobs_to_be_done": {"functional": ["のと鉄道と温泉・食事・観光を無理なく組み合わせたい", "駅周辺や乗換地点で失敗しない一食を選びたい"], "emotional": ["食と湯で、能登に来た実感を得たい", "旅程がうまくつながったという納得感を得たい"], "social": ["同行者に『いい旅程だった』と思ってもらいたい", "人に薦められる能登の一日を持ち帰りたい"]}, "pain_points": ["駅周辺・穴水・和倉周辺の飲食選択肢が見えにくい", "列車ダイヤと食事時間が合わないと不満につながる", "荷物があると土産購入や周遊がしにくい"], "message_hooks": ["のと鉄道でつなぐ、湯と海鮮の一日", "車窓のあとに味わう能登の一食", "列車・温泉・食がほどける能登旅"], "recommended_actions": [{"action": "ダイヤ連動の食・温泉モデルコースを作る", "why_it_works": "列車利用を周辺消費に接続できる", "related_persona_need": "食と温泉を外さず回りたい"}, {"action": "駅周辺の飲食営業情報を見える化する", "why_it_works": "食事難民化を防ぎ、満足度を上げる", "related_persona_need": "時間に合う一食を選びたい"}, {"action": "手荷物・土産配送情報を提示する", "why_it_works": "公共交通でも買い物しやすくなる", "related_persona_need": "荷物を気にせず消費したい"}], "sample_voice": "美味しい食べ物 / 食べ物が美味しい", "sample_comments": ["美味しい食べ物", "食べ物が美味しい", "石川が好き", "すてきだとおもった"], "representative_keywords": ["温泉", "宿", "海", "駅", "和倉温泉", "自然", "金沢", "景色", "鉄道", "海鮮", "電車", "のと鉄道"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["土地の美味しいものと温泉を外したくない", "交通と食事のタイミングが合うと満足度が上がる", "旅程全体のつながりを重視する", "駅周辺・穴水・和倉周辺の飲食選択肢が見えにくい", "列車ダイヤと食事時間が合わないと不満につながる"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「湯と海鮮の編集者・佐伯さん」です。食と温泉を組み合わせる能登周遊トラベラーという合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はhighです。"}}, {"persona_id": "recovery_respectful_visitor", "name_ja": "復旧した線路に乗って応援する敬意ある能登訪問者", "nickname": "応援乗車派・森さん", "archetype_id": "recovery_respectful_visitor", "one_line_summary": "復興・再開・応援の意味を持ってのと鉄道を訪れる、推奨度の高い層。", "data_support": {"n": 86, "share_pct": 19.2, "confidence": "high", "confidence_note": "nが50以上で特徴が明確"}, "synthetic_profile": {"age_core": "50代30.2%、60代18.6%、30代15.1%", "household_income": "上位: 400万円以上 500万円未満20.9%、500万円以上 600万円未満11.6%、300万円以上 400万円未満9.3%", "source_region": "首都圏48.8%、関西17.4%、その他14.0%、中京12.8%", "companion": "上位: 自分ひとり40.7%、夫婦2人24.4%、団体旅行7.0%、友人7.0%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、千里浜なぎさドライブウェイ、輪島朝市、能登食祭市場、輪島朝市、千里浜なぎさドライブウェイ", "typical_facilities": ["のと鉄道（通常）", "のと鉄道（震災語り部列車）"], "typical_behavior": ["地元の美味しいものを食べる", "温泉や露天風呂", "まちあるき、都市散策", "名所、旧跡の観光", "宿でのんびり過ごす"]}, "data_points": {"trip_total_spend_median_yen": 47500, "lodging_spend_median_yen": 15000, "transport_spend_median_yen": 15000, "local_spend_median_yen": 15000, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.35, "facility_satisfaction_mean": 4.36, "trip_satisfaction_mean": 4.57, "facility_nps_mean": 8.37, "facility_nps_score": 41.9, "trip_nps_mean": 8.88, "trip_nps_score": 59.3, "revisit_within_1year_pct": 62.8, "inconvenience_pct": 17.4, "top_purposes": {"地元の美味しいものを食べる": 52.3, "温泉や露天風呂": 44.2, "まちあるき、都市散策": 26.7, "名所、旧跡の観光": 23.3, "宿でのんびり過ごす": 12.8, "花見や紅葉などの自然鑑賞": 12.8}, "top_info_sources": {"インターネット・アプリ": 54.7, "観光パンフレット・ポスター": 19.8, "新聞・雑誌・ガイドブック": 18.6, "X(旧：Twitter)": 18.6, "友人・知人": 15.1, "Instagram": 12.8}, "top_transport_to_ishikawa": {"新幹線": 51.2, "在来線": 46.5, "飛行機": 14.0, "旅行会社ツアーバス": 12.8, "自家用車": 8.1}, "top_transport_to_facility": {"在来線": 61.6, "路線バス": 18.6, "旅行会社ツアーバス": 15.1, "自家用車": 9.3, "徒歩": 5.8}, "top_previous_places": {"能登食祭市場": 10.5, "千里浜なぎさドライブウェイ": 7.0, "輪島朝市": 5.8, "のとじま水族館": 5.8, "和倉温泉": 4.7, "のと鉄道": 2.3, "東尋坊": 1.2, "穴水どんたく": 1.2}, "top_next_places": {"能登食祭市場": 11.6, "輪島朝市": 11.6, "千里浜なぎさドライブウェイ": 3.5, "道の駅のとじま": 3.5, "和倉温泉": 7.0, "能登中島": 1.2, "金沢城": 1.2, "七尾ミナクル": 1.2}, "top_facilities": {"のと鉄道（通常）": 98.8, "のと鉄道（震災語り部列車）": 1.2}, "top_companions": {"自分ひとり": 40.7, "夫婦2人": 24.4, "団体旅行": 7.0, "友人": 7.0, "中学生以上連れの家族": 5.8}, "top_prefectures": {"東京都": 24.4, "神奈川県": 12.8, "大阪府": 11.6, "愛知県": 9.3, "千葉県": 5.8, "埼玉県": 5.8}}, "orientation_scores_0_100": {"rail": 53.8, "scenery": 40.4, "recovery": 78.0, "family": 15.1, "food": 52.3, "onsen": 55.8, "mobility": 31.7, "local_repeat": 15.7}, "narrative": "この層は、観光客でありながら能登の現在に対して敬意と遠慮を持っている。のと鉄道に乗ることは、単なる移動でも観光でもなく、再開した場所を自分の目で見て、地域にお金を落とす行為でもある。過度な感動消費ではなく、いま訪れてよい場所、応援になる消費、静かに楽しめるルートを求めている。", "psychology": ["再開・復旧した場所を自分の目で確かめたい", "地域に迷惑をかけず、応援になる形で訪れたい", "食・温泉・まち歩きも、地域消費として意味を持つ", "現地の人の親切さや運行継続に強く感謝する"], "jobs_to_be_done": {"functional": ["いま訪れてよい駅・まち・施設を知りたい", "復興応援になる移動・食事・買い物を旅程化したい"], "emotional": ["少しでも応援できたという実感を得たい", "再開した風景を見て、能登との関係を持ちたい"], "social": ["周囲に、応援の形としての乗車体験を伝えたい", "一度きりではなく、継続して訪れる関係をつくりたい"]}, "pain_points": ["復興情報と観光情報が分かれていて、計画しにくい", "どこまで訪れてよいか分かりにくい", "感情を煽りすぎる表現には違和感を持ちやすい"], "message_hooks": ["乗ることが、能登への静かな応援になる", "再開した線路を、いま訪ねる", "復興の現在を、車窓から見届ける"], "recommended_actions": [{"action": "再開状況と訪問可能エリアを一体表示する", "why_it_works": "不安を減らし、敬意ある訪問につながる", "related_persona_need": "いま行ってよい場所を知りたい"}, {"action": "応援消費ルートを提示する", "why_it_works": "乗車・食事・土産購入を地域貢献として設計できる", "related_persona_need": "応援になる行動を選びたい"}, {"action": "語りすぎない復興ストーリーを掲載する", "why_it_works": "感動消費化を避け、信頼を保てる", "related_persona_need": "敬意を持って受け止めたい"}], "sample_voice": "車窓からの冬景色 / 思ったよりも便数が多く、JRが不通になっていても運行していた", "sample_comments": ["車窓からの冬景色", "思ったよりも便数が多く、JRが不通になっていても運行していた", "景色がとても美しい", "穴水、和倉温泉で食事するところが少ない"], "representative_keywords": ["温泉", "復興", "駅", "鉄道", "輪島", "景色", "応援", "海", "金沢", "のと鉄道", "穴水", "和倉温泉"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["再開・復旧した場所を自分の目で確かめたい", "地域に迷惑をかけず、応援になる形で訪れたい", "食・温泉・まち歩きも、地域消費として意味を持つ", "復興情報と観光情報が分かれていて、計画しにくい", "どこまで訪れてよいか分かりにくい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「応援乗車派・森さん」です。復旧した線路に乗って応援する敬意ある能登訪問者という合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はhighです。"}}, {"persona_id": "family_pokemon_memory", "name_ja": "POKÉMON列車で思い出を作る親子・キャラ体験層", "nickname": "親子記憶メーカー・田中さん", "archetype_id": "family_pokemon_memory", "one_line_summary": "POKÉMON with YOUトレインや親子体験をきっかけに、のと鉄道に乗る層。", "data_support": {"n": 64, "share_pct": 14.3, "confidence": "high", "confidence_note": "nが50以上で特徴が明確"}, "synthetic_profile": {"age_core": "30代25.0%、50代21.9%、20代21.9%", "household_income": "上位: 400万円以上 500万円未満15.6%、1,000万円以上 1,200万円未満14.1%、600万円以上 700万円未満12.5%", "source_region": "北陸32.8%、関西21.9%、首都圏21.9%、その他12.5%", "companion": "上位: 自分ひとり35.9%、夫婦2人14.1%、小学生以下連れの家族14.1%、友人12.5%", "main_area": "能登エリア。前後の立寄りは 輪島朝市、能登食祭市場、道の駅のとじま、能登食祭市場、輪島朝市、禄剛崎灯台", "typical_facilities": ["のと鉄道 POK?MON with YOUトレイン"], "typical_behavior": ["地元の美味しいものを食べる", "名所、旧跡の観光", "温泉や露天風呂", "まちあるき、都市散策", "花見や紅葉などの自然鑑賞"]}, "data_points": {"trip_total_spend_median_yen": 22500, "lodging_spend_median_yen": 4000, "transport_spend_median_yen": 7500, "local_spend_median_yen": 7500, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.45, "facility_satisfaction_mean": 4.44, "trip_satisfaction_mean": 4.56, "facility_nps_mean": 8.47, "facility_nps_score": 46.9, "trip_nps_mean": 9.08, "trip_nps_score": 65.6, "revisit_within_1year_pct": 48.4, "inconvenience_pct": 12.5, "top_purposes": {"地元の美味しいものを食べる": 42.2, "名所、旧跡の観光": 32.8, "温泉や露天風呂": 31.2, "まちあるき、都市散策": 28.1, "花見や紅葉などの自然鑑賞": 18.8, "宿でのんびり過ごす": 15.6}, "top_info_sources": {"インターネット・アプリ": 50.0, "友人・知人": 25.0, "X(旧：Twitter)": 17.2, "Instagram": 15.6, "新聞・雑誌・ガイドブック": 14.1, "観光パンフレット・ポスター": 10.9}, "top_transport_to_ishikawa": {"新幹線": 35.9, "在来線": 32.8, "県外から訪れていない（石川県内在住）": 20.3, "飛行機": 18.8, "自家用車": 12.5}, "top_transport_to_facility": {"在来線": 57.8, "自家用車": 25.0, "路線バス": 15.6, "レンタカー": 6.2, "徒歩": 4.7}, "top_previous_places": {"輪島朝市": 10.9, "能登食祭市場": 9.4, "道の駅のとじま": 9.4, "千里浜なぎさドライブウェイ": 4.7, "鴨ヶ浦": 3.1, "ちゃか寿司": 1.6, "コミセン": 1.6, "輪島駅": 1.6}, "top_next_places": {"能登食祭市場": 17.2, "輪島朝市": 6.2, "禄剛崎灯台": 6.2, "道の駅のとじま": 3.1, "和倉温泉": 6.2, "能登空港": 3.1, "和倉温泉総湯": 3.1, "七尾駅": 3.1}, "top_facilities": {"のと鉄道 POK?MON with YOUトレイン": 100.0}, "top_companions": {"自分ひとり": 35.9, "夫婦2人": 14.1, "小学生以下連れの家族": 14.1, "友人": 12.5, "恋人": 9.4}, "top_prefectures": {"石川県": 23.4, "東京都": 12.5, "大阪府": 10.9, "神奈川県": 7.8, "愛知県": 7.8, "兵庫県": 7.8}}, "orientation_scores_0_100": {"rail": 46.4, "scenery": 30.0, "recovery": 5.9, "family": 71.7, "food": 42.7, "onsen": 42.9, "mobility": 21.5, "local_repeat": 30.4}, "narrative": "この層では、のと鉄道は子どもや同行者の反応を引き出す舞台になる。ポケモン列車の内装、写真、駅での体験、道中の景色が一体となって、家族の記憶に残る。高価な体験よりも、子どもが飽きないこと、移動が難しすぎないこと、乗った後に食事や観光へつなげられることが重要である。", "psychology": ["子どもや同行者が喜ぶ瞬間を重視する", "かわいさ、写真映え、限定感に反応しやすい", "列車体験だけでなく、前後の食事・観光まで含めて評価する", "初めてでも分かりやすい案内を求める"], "jobs_to_be_done": {"functional": ["親子で楽しめる列車体験を失敗なく予約・乗車したい", "乗車前後に食事・観光・休憩を組み合わせたい"], "emotional": ["子どもが喜ぶ姿を見て、自分も満たされたい", "家族旅行の特別な思い出を残したい"], "social": ["写真や体験談を家族・友人に共有したい", "子どもに地域や鉄道への関心を持たせたい"]}, "pain_points": ["予約・運行日・乗り場の情報が分散すると不安になる", "子連れ向けのトイレ・休憩・食事情報が不足しやすい", "列車体験後の過ごし方が見えにくい"], "message_hooks": ["子どもの笑顔が、能登の車窓に重なる", "親子で乗る、特別なポケモン列車旅", "列車・写真・食まで一日で楽しむ能登"], "recommended_actions": [{"action": "親子向け一日モデルコースを作る", "why_it_works": "乗車前後の不安を減らし、滞在時間を伸ばせる", "related_persona_need": "子どもが飽きない旅にしたい"}, {"action": "写真スポットと乗車記念導線を整える", "why_it_works": "思い出化しやすくSNS共有にもつながる", "related_persona_need": "特別な体験を残したい"}, {"action": "子連れ設備情報を明示する", "why_it_works": "トイレ・休憩・食事不安を減らせる", "related_persona_need": "家族全員で無理なく楽しみたい"}], "sample_voice": "久しぶりに列車に乗ったが、移動もスムーズで快適に過ごすことができた。またたまたまポケモン列車に乗ることができ嬉しかった。内装まで可愛い！ / のと鉄道のかわいさ。森や海も見えて通る道の景色の良さ", "sample_comments": ["久しぶりに列車に乗ったが、移動もスムーズで快適に過ごすことができた。またたまたまポケモン列車に乗ることができ嬉しかった。内装まで可愛い！", "のと鉄道のかわいさ。森や海も見えて通る道の景色の良さ", "上記の通りです！！", "のとのお土産の種類で、ナマモノ以外の種類もさらに増やして選択肢を増やして欲しい。"], "representative_keywords": ["ポケモン", "温泉", "駅", "自然", "鉄道", "列車", "金沢", "のと鉄道", "宿", "電車", "和倉温泉", "景色"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["子どもや同行者が喜ぶ瞬間を重視する", "かわいさ、写真映え、限定感に反応しやすい", "列車体験だけでなく、前後の食事・観光まで含めて評価する", "予約・運行日・乗り場の情報が分散すると不安になる", "子連れ向けのトイレ・休憩・食事情報が不足しやすい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「親子記憶メーカー・田中さん」です。POKÉMON列車で思い出を作る親子・キャラ体験層という合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はhighです。"}}, {"persona_id": "scenic_rail_fan", "name_ja": "車窓とローカル線を旅の目的にする鉄道風景トラベラー", "nickname": "車窓編集者・黒田さん", "archetype_id": "scenic_rail_fan", "one_line_summary": "のと鉄道そのもの、車窓、海、駅、ゆっくりした移動に価値を感じる層。", "data_support": {"n": 63, "share_pct": 14.1, "confidence": "high", "confidence_note": "nが50以上で特徴が明確"}, "synthetic_profile": {"age_core": "20代23.8%、30代22.2%、40代17.5%", "household_income": "上位: 400万円以上 500万円未満15.9%、500万円以上 600万円未満12.7%、300万円以上 400万円未満11.1%", "source_region": "首都圏33.3%、北陸20.6%、その他19.0%、関西15.9%", "companion": "上位: 自分ひとり58.7%、友人17.5%、小学生以下連れの家族7.9%、親4.8%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、のとじま水族館、輪島朝市、輪島朝市、能登食祭市場、のとじま水族館", "typical_facilities": ["のと鉄道（通常）"], "typical_behavior": ["地元の美味しいものを食べる", "まちあるき、都市散策", "名所、旧跡の観光", "花見や紅葉などの自然鑑賞", "温泉や露天風呂"]}, "data_points": {"trip_total_spend_median_yen": 37500, "lodging_spend_median_yen": 7500, "transport_spend_median_yen": 15000, "local_spend_median_yen": 7500, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.37, "facility_satisfaction_mean": 4.44, "trip_satisfaction_mean": 4.52, "facility_nps_mean": 8.49, "facility_nps_score": 41.3, "trip_nps_mean": 8.83, "trip_nps_score": 55.6, "revisit_within_1year_pct": 60.3, "inconvenience_pct": 15.9, "top_purposes": {"地元の美味しいものを食べる": 47.6, "まちあるき、都市散策": 39.7, "名所、旧跡の観光": 33.3, "花見や紅葉などの自然鑑賞": 28.6, "温泉や露天風呂": 23.8, "友人・親戚を訪ねる": 12.7}, "top_info_sources": {"インターネット・アプリ": 63.5, "友人・知人": 25.4, "新聞・雑誌・ガイドブック": 22.2, "X(旧：Twitter)": 17.5, "観光パンフレット・ポスター": 17.5, "Instagram": 14.3}, "top_transport_to_ishikawa": {"在来線": 65.1, "新幹線": 55.6, "県外から訪れていない（石川県内在住）": 7.9, "飛行機": 6.3, "高速バス": 3.2}, "top_transport_to_facility": {"在来線": 100.0, "路線バス": 19.0, "徒歩": 3.2, "自家用車": 3.2, "ふるさとタクシー": 1.6}, "top_previous_places": {"能登食祭市場": 15.9, "のとじま水族館": 3.2, "輪島朝市": 3.2, "千里浜なぎさドライブウェイ": 3.2, "和倉温泉": 3.2, "能登鹿島駅": 3.2, "どんたく、穴水大宮": 1.6, "総湯　和倉温泉": 1.6}, "top_next_places": {"輪島朝市": 9.5, "能登食祭市場": 7.9, "のとじま水族館": 7.9, "道の駅のとじま": 1.6, "和倉温泉": 3.2, "道の駅穴水": 3.2, "帰宅": 3.2, "能登鹿島駅": 3.2}, "top_facilities": {"のと鉄道（通常）": 100.0}, "top_companions": {"自分ひとり": 58.7, "友人": 17.5, "小学生以下連れの家族": 7.9, "親": 4.8, "夫婦2人": 3.2}, "top_prefectures": {"東京都": 14.3, "神奈川県": 12.7, "石川県": 11.1, "愛知県": 9.5, "大阪府": 9.5, "富山県": 6.3}}, "orientation_scores_0_100": {"rail": 85.3, "scenery": 67.9, "recovery": 0.0, "family": 7.2, "food": 51.8, "onsen": 37.2, "mobility": 26.4, "local_repeat": 23.1}, "narrative": "この層にとって、のと鉄道は目的地へ行くための手段ではなく、旅の中心に置かれる体験である。車窓から見える海や集落、駅での余白、ローカル線に乗る時間そのものが満足をつくる。食やまち歩きにも関心はあるが、旅の記憶を決めるのは『移動している時間が美しかったか』である。", "psychology": ["移動時間を無駄ではなく、旅の本編として味わいたい", "ローカル線らしい速度、景色、駅の雰囲気に強く反応する", "事前にダイヤを調べ、少ない本数でも計画できれば満足しやすい", "車窓・駅・切符など、鉄道体験を語れる形で持ち帰りたい"], "jobs_to_be_done": {"functional": ["のと鉄道に乗ること自体を旅程の中心に組み込みたい", "車窓・駅・周辺スポットを無理なくつなぎたい"], "emotional": ["海沿いを走るローカル線の時間に浸りたい", "能登らしい静けさや余白を体感したい"], "social": ["鉄道好きや友人に『この区間は良かった』と語りたい", "写真やSNSで、能登の車窓体験を共有したい"]}, "pain_points": ["本数が少なく、一本逃すと旅程が崩れやすい", "駅周辺の食事・休憩・荷物対策が見えにくい", "車窓の見どころやおすすめ座席が事前に分かりにくい"], "message_hooks": ["移動ではなく、車窓を味わう旅へ", "海を眺めるローカル線時間", "駅と景色をめぐる、ゆっくり能登旅"], "recommended_actions": [{"action": "車窓の見どころマップを作る", "why_it_works": "鉄道体験そのものが目的なので、乗車中の価値を可視化できる", "related_persona_need": "車窓・駅・景色を味わいたい"}, {"action": "モデルダイヤを複数提示する", "why_it_works": "本数の少なさを不安ではなく計画の楽しみに変えられる", "related_persona_need": "少ない便でも失敗したくない"}, {"action": "駅周辺の一食・一休み情報をセットで出す", "why_it_works": "乗車前後の滞在価値が上がる", "related_persona_need": "駅時間を快適に過ごしたい"}], "sample_voice": "景色がきれい。少ないながら事前に計画すれば問題提起ダイヤとHPで年末年始についても案内がちゃんとあった。 / 大好きな大江山と白駒がいっぺんに買えた。その他お土産も充実していて、飲食スペースが過密にならず回転率が良かったので安心して食事も出来た。", "sample_comments": ["景色がきれい。少ないながら事前に計画すれば問題提起ダイヤとHPで年末年始についても案内がちゃんとあった。", "大好きな大江山と白駒がいっぺんに買えた。その他お土産も充実していて、飲食スペースが過密にならず回転率が良かったので安心して食事も出来た。", "駅から少し歩くので、バスの時間を分かりやすく掲示して頂ければ、荷物の重さをあまり気にせずに買い物できた。", "比較的すっきり飲みやすい銘柄が多いので、?兵衛以外の人向けに道の駅などの日本酒売場に味わいのレーダーチャートなどがあると良いかと思いました。また、和倉温泉HPの様に他の観光地にも遠方からだけではなく県内や近隣地域間の移動案内があるとありがたいです。"], "representative_keywords": ["駅", "景色", "温泉", "鉄道", "海", "自然", "穴水", "のと鉄道", "金沢", "電車", "車窓", "列車"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["移動時間を無駄ではなく、旅の本編として味わいたい", "ローカル線らしい速度、景色、駅の雰囲気に強く反応する", "事前にダイヤを調べ、少ない本数でも計画できれば満足しやすい", "本数が少なく、一本逃すと旅程が崩れやすい", "駅周辺の食事・休憩・荷物対策が見えにくい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「車窓編集者・黒田さん」です。車窓とローカル線を旅の目的にする鉄道風景トラベラーという合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はhighです。"}}, {"persona_id": "general_noto_visitor", "name_ja": "用事や観光の合間にのと鉄道へ接触するライト訪問者", "nickname": "きっかけ待ち旅人・高橋さん", "archetype_id": "general_noto_visitor", "one_line_summary": "目的が分散し、推奨度が相対的に低い。体験価値の見える化で伸びしろがある層。", "data_support": {"n": 39, "share_pct": 8.7, "confidence": "medium", "confidence_note": "nは中程度。施策仮説として利用可能"}, "synthetic_profile": {"age_core": "50代30.8%、20代25.6%、40代15.4%", "household_income": "上位: 500万円以上 600万円未満12.8%、100万円以上 200万円未満12.8%、100万円未満10.3%", "source_region": "首都圏28.2%、中京23.1%、関西20.5%、北陸15.4%", "companion": "上位: 自分ひとり53.8%、夫婦2人17.9%、小学生以下連れの家族10.3%、友人7.7%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、のとじま水族館、道の駅のとじま、道の駅のとじま、能登食祭市場、輪島朝市", "typical_facilities": ["のと鉄道（通常）"], "typical_behavior": ["友人・親戚を訪ねる", "まちあるき、都市散策", "出張など仕事関係", "名所、旧跡の観光", "花見や紅葉などの自然鑑賞"]}, "data_points": {"trip_total_spend_median_yen": 23000, "lodging_spend_median_yen": 4000, "transport_spend_median_yen": 7500, "local_spend_median_yen": 7500, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 3.95, "facility_satisfaction_mean": 4.03, "trip_satisfaction_mean": 4.26, "facility_nps_mean": 6.82, "facility_nps_score": -10.3, "trip_nps_mean": 7.67, "trip_nps_score": 15.4, "revisit_within_1year_pct": 46.2, "inconvenience_pct": 7.7, "top_purposes": {"友人・親戚を訪ねる": 20.5, "まちあるき、都市散策": 20.5, "出張など仕事関係": 17.9, "名所、旧跡の観光": 12.8, "花見や紅葉などの自然鑑賞": 12.8, "お祭りやイベントへの参加・見物": 10.3}, "top_info_sources": {"インターネット・アプリ": 43.6, "友人・知人": 23.1, "新聞・雑誌・ガイドブック": 15.4, "X(旧：Twitter)": 15.4, "Instagram": 10.3, "観光連盟やDMOのHP": 7.7}, "top_transport_to_ishikawa": {"在来線": 51.3, "新幹線": 46.2, "自家用車": 25.6, "飛行機": 12.8, "高速バス": 5.1}, "top_transport_to_facility": {"在来線": 51.3, "自家用車": 30.8, "路線バス": 15.4, "徒歩": 5.1, "レンタサイクル": 2.6}, "top_previous_places": {"能登食祭市場": 17.9, "のとじま水族館": 10.3, "道の駅のとじま": 7.7, "輪島朝市": 7.7, "色々な神社": 2.6, "調べずに何も来たので有名なものを何も知らなかった。": 2.6, "あなみずスマイルマルシェ": 2.6, "すずなり館": 2.6}, "top_next_places": {"道の駅のとじま": 12.8, "能登食祭市場": 10.3, "輪島朝市": 7.7, "のとじま水族館": 2.6, "色々な神社": 2.6, "くり坊（新高岡のラーメン屋）": 2.6, "在来線だけで来てるため時間がカツカツ": 2.6, "和倉温泉": 2.6}, "top_facilities": {"のと鉄道（通常）": 100.0}, "top_companions": {"自分ひとり": 53.8, "夫婦2人": 17.9, "小学生以下連れの家族": 10.3, "友人": 7.7, "中学生以上連れの家族": 5.1}, "top_prefectures": {"愛知県": 12.8, "岐阜県": 10.3, "埼玉県": 10.3, "大阪府": 10.3, "東京都": 10.3, "兵庫県": 7.7}}, "orientation_scores_0_100": {"rail": 27.1, "scenery": 24.7, "recovery": 0.0, "family": 13.5, "food": 10.0, "onsen": 15.4, "mobility": 13.2, "local_repeat": 27.1}, "narrative": "この層は、のと鉄道に強い目的意識を持って来ているとは限らない。友人・親戚訪問、仕事、まち歩きなどの途中で接触しており、鉄道体験の価値が十分に伝わらないと『普通の移動』で終わってしまう。逆に、乗る理由、降りる理由、食べる理由が提示されると、観光体験として引き上げられる余地がある。", "psychology": ["のと鉄道への関心はあるが、目的化まではしていない", "分かりやすい見どころがあると行動に移りやすい", "移動・食・まち歩きが自然につながると評価が上がる", "不便や価格感に敏感で、体験価値が伝わらないと推奨しにくい"], "jobs_to_be_done": {"functional": ["用事や観光の合間に、短時間で楽しめる乗車体験を知りたい", "前後のスポットや食事と組み合わせて意味のある寄り道にしたい"], "emotional": ["せっかく能登に来たから、少し良い体験を足したい", "普通の移動以上の発見を得たい"], "social": ["同行者に寄り道の価値を説明できるようにしたい", "人に薦められる理由を持ち帰りたい"]}, "pain_points": ["体験価値が見えないと普通の交通手段に見えてしまう", "アクセスや価格への不満が評価に直結しやすい", "短時間で何ができるか分かりにくい"], "message_hooks": ["用事の合間に、能登らしい車窓を一つ", "30分でも旅になる、のと鉄道", "乗る理由が見つかるローカル線"], "recommended_actions": [{"action": "短時間コースを作る", "why_it_works": "目的意識の弱い層でも乗りやすくなる", "related_persona_need": "合間に楽しみたい"}, {"action": "おすすめ理由を一目で見せる", "why_it_works": "普通の移動から体験へ変換できる", "related_persona_need": "人に説明できる理由が欲しい"}, {"action": "価格・所要時間・見どころをセット表示する", "why_it_works": "不満の芽を減らせる", "related_persona_need": "判断材料を早く知りたい"}], "sample_voice": "金沢の観光地価格が酷い / 各所へのアクセスが悪い。", "sample_comments": ["金沢の観光地価格が酷い", "各所へのアクセスが悪い。", "おいしかった", "ショッピングかできる施設/能登に若者を定住させることができる大学の創設/大学周りのまちづくり/"], "representative_keywords": ["自然", "金沢", "海", "景色", "電車", "在来線", "ポケモン", "温泉", "海鮮", "本数", "桜", "駅"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["のと鉄道への関心はあるが、目的化まではしていない", "分かりやすい見どころがあると行動に移りやすい", "移動・食・まち歩きが自然につながると評価が上がる", "体験価値が見えないと普通の交通手段に見えてしまう", "アクセスや価格への不満が評価に直結しやすい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「きっかけ待ち旅人・高橋さん」です。用事や観光の合間にのと鉄道へ接触するライト訪問者という合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はmediumです。"}}, {"persona_id": "quiet_solo_train_traveler", "name_ja": "一人で線路をたどる静かな鉄道旅層", "nickname": "ひとり鉄路派・西村さん", "archetype_id": "quiet_solo_train_traveler", "one_line_summary": "一人旅比率が高く、鉄道に乗ることを静かに楽しむ中高年・都市圏来訪者。", "data_support": {"n": 32, "share_pct": 7.2, "confidence": "medium", "confidence_note": "nは中程度。施策仮説として利用可能"}, "synthetic_profile": {"age_core": "50代31.2%、60代21.9%、30代18.8%", "household_income": "上位: 500万円以上 600万円未満21.9%、400万円以上 500万円未満15.6%、300万円以上 400万円未満9.4%", "source_region": "首都圏37.5%、関西25.0%、その他21.9%、北陸9.4%", "companion": "上位: 自分ひとり59.4%、夫婦2人15.6%、友人9.4%、中学生以上連れの家族6.2%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、千里浜なぎさドライブウェイ、のとじま水族館、能登食祭市場、千里浜なぎさドライブウェイ、道の駅のとじま", "typical_facilities": ["のと鉄道（通常）"], "typical_behavior": ["出張など仕事関係", "まちあるき、都市散策", "名所、旧跡の観光", "お祭りやイベントへの参加・見物", "友人・親戚を訪ねる"]}, "data_points": {"trip_total_spend_median_yen": 37000, "lodging_spend_median_yen": 7500, "transport_spend_median_yen": 15000, "local_spend_median_yen": 15000, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.12, "facility_satisfaction_mean": 4.12, "trip_satisfaction_mean": 4.34, "facility_nps_mean": 8.06, "facility_nps_score": 21.9, "trip_nps_mean": 8.34, "trip_nps_score": 37.5, "revisit_within_1year_pct": 56.2, "inconvenience_pct": 12.5, "top_purposes": {"出張など仕事関係": 18.8, "まちあるき、都市散策": 18.8, "名所、旧跡の観光": 12.5, "お祭りやイベントへの参加・見物": 12.5, "友人・親戚を訪ねる": 9.4, "鉄印集め": 6.2}, "top_info_sources": {"インターネット・アプリ": 53.1, "友人・知人": 21.9, "X(旧：Twitter)": 18.8, "観光パンフレット・ポスター": 15.6, "新聞・雑誌・ガイドブック": 15.6, "Instagram": 6.2}, "top_transport_to_ishikawa": {"新幹線": 75.0, "在来線": 59.4, "飛行機": 6.2, "夜行バス": 3.1, "自家用車": 3.1}, "top_transport_to_facility": {"在来線": 87.5, "路線バス": 12.5, "夜行バス": 3.1, "自家用車": 3.1}, "top_previous_places": {"能登食祭市場": 9.4, "千里浜なぎさドライブウェイ": 3.1, "のとじま水族館": 3.1, "道の駅のとじま": 3.1, "金沢駅": 12.5, "実家": 3.1, "なかじま猿田彦温泉": 3.1, "鉄印集めのため": 3.1}, "top_next_places": {"能登食祭市場": 3.1, "千里浜なぎさドライブウェイ": 3.1, "道の駅のとじま": 3.1, "穴水駅": 12.5, "穴水大宮": 3.1, "金沢駅": 3.1, "道の駅あなみず": 3.1}, "top_facilities": {"のと鉄道（通常）": 100.0}, "top_companions": {"自分ひとり": 59.4, "夫婦2人": 15.6, "友人": 9.4, "中学生以上連れの家族": 6.2, "職場の同僚": 6.2}, "top_prefectures": {"東京都": 25.0, "大阪府": 12.5, "埼玉県": 9.4, "兵庫県": 6.2, "岩手県": 6.2, "栃木県": 3.1}}, "orientation_scores_0_100": {"rail": 77.8, "scenery": 9.5, "recovery": 0.0, "family": 9.8, "food": 15.3, "onsen": 17.5, "mobility": 20.0, "local_repeat": 24.1}, "narrative": "この層は、派手な観光体験よりも、一人で列車に乗り、駅に降り、能登の空気を確かめるような旅に価値を置く。車窓風景への強い言及がなくても、初めての路線、切符、駅、乗車そのものが目的になる。必要なのは過剰な演出ではなく、一人でも迷わず、静かに楽しめる情報である。", "psychology": ["一人で自由に移動できることを重視する", "初めての路線や駅をたどることに満足を感じる", "混雑や過度な演出より、静かな体験を好む", "切符購入や乗り場で迷うと満足度が下がりやすい"], "jobs_to_be_done": {"functional": ["一人でのと鉄道に乗り、駅や沿線を無理なく回りたい", "切符・乗り場・時刻を迷わず把握したい"], "emotional": ["自分のペースで能登の鉄路を味わいたい", "知らない路線に乗る小さな達成感を得たい"], "social": ["鉄道旅の記録として、訪問駅や乗車体験を残したい", "同じ趣味の人に静かな良さを伝えたい"]}, "pain_points": ["切符購入場所や乗り方が初見では分かりにくい", "駅周辺で一人でも入りやすい食事・休憩先が見えにくい", "乗車後の過ごし方が薄いと滞在が短くなる"], "message_hooks": ["ひとりでたどる、能登の線路", "駅に降りるだけで、旅になる", "静かに乗る、のと鉄道"], "recommended_actions": [{"action": "一人旅向け乗車ガイドを作る", "why_it_works": "初訪問の迷いを減らせる", "related_persona_need": "一人でも失敗したくない"}, {"action": "鉄印・切符・駅めぐり導線を整える", "why_it_works": "乗車目的を明確にし、再訪につなげられる", "related_persona_need": "記録として持ち帰りたい"}, {"action": "一人でも入りやすい店を表示する", "why_it_works": "滞在消費が増えやすい", "related_persona_need": "静かに休みたい"}], "sample_voice": "初めて乗る路線だから / 初めて乗る電車だから", "sample_comments": ["初めて乗る路線だから", "初めて乗る電車だから", "切符を買う場所に悩んだ", "石川県でしかできないことや郷土食の体験"], "representative_keywords": ["駅", "鉄道", "穴水", "金沢", "電車", "ポケモン", "温泉", "のと鉄道", "切符", "土産", "海", "鉄印"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["一人で自由に移動できることを重視する", "初めての路線や駅をたどることに満足を感じる", "混雑や過度な演出より、静かな体験を好む", "切符購入場所や乗り方が初見では分かりにくい", "駅周辺で一人でも入りやすい食事・休憩先が見えにくい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「ひとり鉄路派・西村さん」です。一人で線路をたどる静かな鉄道旅層という合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はmediumです。"}}, {"persona_id": "local_repeat_lifeline_user", "name_ja": "近隣から何度も訪れる生活圏リピーター", "nickname": "日常接続派・山本さん", "archetype_id": "local_repeat_lifeline_user", "one_line_summary": "北陸在住・再訪経験が多く、観光と生活利用の境目にいる層。", "data_support": {"n": 26, "share_pct": 5.8, "confidence": "medium", "confidence_note": "nは中程度。施策仮説として利用可能"}, "synthetic_profile": {"age_core": "10代34.6%、40代23.1%、50代19.2%", "household_income": "上位: 400万円以上 500万円未満19.2%、200万円以上 300万円未満11.5%、900万円以上 1,000万円未満11.5%", "source_region": "北陸100.0%", "companion": "上位: 自分ひとり42.3%、友人19.2%、小学生以下連れの家族11.5%、夫婦2人7.7%", "main_area": "能登エリア。前後の立寄りは 能登食祭市場、のとじま水族館、千里浜なぎさドライブウェイ、のとじま水族館、千里浜なぎさドライブウェイ、能登食祭市場", "typical_facilities": ["のと鉄道（通常）", "のと鉄道（震災語り部列車）"], "typical_behavior": ["まちあるき、都市散策", "花見や紅葉などの自然鑑賞", "その他スポーツ（ゴルフ、テニスなど）", "出張など仕事関係", "友人・親戚を訪ねる"]}, "data_points": {"trip_total_spend_median_yen": 6000, "lodging_spend_median_yen": 0, "transport_spend_median_yen": 2000, "local_spend_median_yen": 3000, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 4.12, "facility_satisfaction_mean": 4.23, "trip_satisfaction_mean": 4.46, "facility_nps_mean": 7.85, "facility_nps_score": 26.9, "trip_nps_mean": 8.69, "trip_nps_score": 53.8, "revisit_within_1year_pct": 30.8, "inconvenience_pct": 3.8, "top_purposes": {"まちあるき、都市散策": 23.1, "花見や紅葉などの自然鑑賞": 19.2, "その他スポーツ（ゴルフ、テニスなど）": 11.5, "出張など仕事関係": 11.5, "友人・親戚を訪ねる": 11.5, "名所、旧跡の観光": 7.7}, "top_info_sources": {"インターネット・アプリ": 50.0, "友人・知人": 30.8, "Instagram": 23.1, "新聞・雑誌・ガイドブック": 11.5, "ブログ": 7.7, "観光パンフレット・ポスター": 7.7}, "top_transport_to_ishikawa": {"県外から訪れていない（石川県内在住）": 61.5, "在来線": 34.6, "自家用車": 11.5}, "top_transport_to_facility": {"在来線": 61.5, "自家用車": 34.6, "徒歩": 15.4, "路線バス": 3.8, "花嫁のれん": 3.8}, "top_previous_places": {"能登食祭市場": 15.4, "のとじま水族館": 3.8, "千里浜なぎさドライブウェイ": 3.8, "輪島朝市": 3.8, "パトリア": 3.8, "山代温泉": 3.8, "のと里山空港": 3.8, "中央茶廊": 3.8}, "top_next_places": {"のとじま水族館": 11.5, "千里浜なぎさドライブウェイ": 7.7, "能登食祭市場": 3.8, "能登ではない": 3.8, "穴水": 3.8, "禅の里交流館": 3.8, "和倉温泉": 3.8}, "top_facilities": {"のと鉄道（通常）": 96.2, "のと鉄道（震災語り部列車）": 3.8}, "top_companions": {"自分ひとり": 42.3, "友人": 19.2, "小学生以下連れの家族": 11.5, "夫婦2人": 7.7, "恋人": 7.7}, "top_prefectures": {"石川県": 80.8, "富山県": 15.4, "福井県": 3.8}}, "orientation_scores_0_100": {"rail": 36.0, "scenery": 26.0, "recovery": 1.2, "family": 10.8, "food": 6.7, "onsen": 9.2, "mobility": 8.1, "local_repeat": 71.5}, "narrative": "この層は、遠方からの観光客とは違い、のと鉄道を能登の生活圏や近場の外出として捉えている。消費額は大きくないが、何度も接点を持ち、地域の空気や日常的な使いやすさに敏感である。観光PRだけでなく、日々の運行、駅の使いやすさ、地域の小さなイベント、地元の買い物導線が価値になる。", "psychology": ["観光地としてだけでなく、生活圏の移動・外出として見ている", "大きな消費より、何度も使いやすいことを重視する", "地域の変化や再開に自然に関心を持つ", "地元・近隣の人にも使いやすい案内を求める"], "jobs_to_be_done": {"functional": ["近場の外出や用事に合わせてのと鉄道を使いたい", "地域イベントや買い物と列車利用を組み合わせたい"], "emotional": ["能登との日常的なつながりを感じたい", "地元・近隣の交通が続いている安心感を得たい"], "social": ["家族や友人を気軽に連れていきたい", "地域の移動手段を支える一人でありたい"]}, "pain_points": ["観光客向け情報だけだと、自分ごと化しにくい", "日常利用に必要な細かな案内が不足しやすい", "少額でも買いやすい商品・軽食が少ないと満足が伸びにくい"], "message_hooks": ["近くの能登を、もう一度乗って楽しむ", "日常の先にあるローカル線時間", "地元の一日を少し楽しくする、のと鉄道"], "recommended_actions": [{"action": "地域向けイベントカレンダーを出す", "why_it_works": "近隣リピーターの再訪機会を増やせる", "related_persona_need": "近場で何度も楽しみたい"}, {"action": "少額消費の導線を作る", "why_it_works": "消費単価は低くても接触頻度で価値を作れる", "related_persona_need": "気軽に買いたい"}, {"action": "地元向け運行・駅情報を整理する", "why_it_works": "生活利用の安心感が上がる", "related_persona_need": "普段使いしやすくしたい"}], "sample_voice": "楽しいから / 食べ物を買って、生きるために必要なものだったから", "sample_comments": ["楽しいから", "食べ物を買って、生きるために必要なものだったから", "生活に必要なものが揃っている", "唾を吐いたり、ずっとこっちを見てきたりと危なそうな人がいっぱいいた"], "representative_keywords": ["自然", "ポケモン", "温泉", "駅", "鉄道", "和倉温泉", "穴水", "景色", "海", "列車", "電車", "宿"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["観光地としてだけでなく、生活圏の移動・外出として見ている", "大きな消費より、何度も使いやすいことを重視する", "地域の変化や再開に自然に関心を持つ", "観光客向け情報だけだと、自分ごと化しにくい", "日常利用に必要な細かな案内が不足しやすい"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「日常接続派・山本さん」です。近隣から何度も訪れる生活圏リピーターという合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はmediumです。"}}, {"persona_id": "mobility_public_transport_planner", "name_ja": "本数と接続を読み切りたい公共交通プランナー", "nickname": "時刻表設計者・村上さん", "archetype_id": "mobility_public_transport_planner", "one_line_summary": "路線バス・在来線・空港接続など、移動の不確実性に強く反応する層。", "data_support": {"n": 21, "share_pct": 4.7, "confidence": "medium", "confidence_note": "nは中程度。施策仮説として利用可能"}, "synthetic_profile": {"age_core": "40代28.6%、50代19.0%、30代19.0%", "household_income": "上位: 300万円以上 400万円未満23.8%、200万円以上 300万円未満19.0%、600万円以上 700万円未満14.3%", "source_region": "首都圏42.9%、北陸23.8%、関西19.0%、その他9.5%", "companion": "上位: 自分ひとり85.7%、中学生以上連れの家族4.8%、友人4.8%、団体旅行4.8%", "main_area": "能登エリア。前後の立寄りは 輪島朝市、能登食祭市場、千里浜なぎさドライブウェイ、千里浜なぎさドライブウェイ、のとじま水族館、能登食祭市場", "typical_facilities": ["のと鉄道（通常）"], "typical_behavior": ["まちあるき、都市散策", "出張など仕事関係", "友人・親戚を訪ねる", "名所、旧跡の観光", "買い物、アウトレット"]}, "data_points": {"trip_total_spend_median_yen": 24500, "lodging_spend_median_yen": 4000, "transport_spend_median_yen": 7500, "local_spend_median_yen": 7500, "facility_spend_median_yen": 2000, "service_satisfaction_mean": 3.86, "facility_satisfaction_mean": 3.86, "trip_satisfaction_mean": 3.95, "facility_nps_mean": 6.71, "facility_nps_score": -28.6, "trip_nps_mean": 7.38, "trip_nps_score": 4.8, "revisit_within_1year_pct": 42.9, "inconvenience_pct": 33.3, "top_purposes": {"まちあるき、都市散策": 28.6, "出張など仕事関係": 23.8, "友人・親戚を訪ねる": 19.0, "名所、旧跡の観光": 19.0, "買い物、アウトレット": 14.3, "花見や紅葉などの自然鑑賞": 9.5}, "top_info_sources": {"インターネット・アプリ": 71.4, "観光連盟やDMOのHP": 19.0, "X(旧：Twitter)": 14.3, "観光協会等の案内所": 14.3, "新聞・雑誌・ガイドブック": 14.3, "観光展・物産展": 9.5}, "top_transport_to_ishikawa": {"在来線": 42.9, "新幹線": 38.1, "飛行機": 33.3, "県外から訪れていない（石川県内在住）": 19.0, "高速バス": 4.8}, "top_transport_to_facility": {"路線バス": 71.4, "在来線": 52.4, "旅行会社ツアーバス": 9.5, "徒歩": 4.8, "レンタカー": 4.8}, "top_previous_places": {"輪島朝市": 28.6, "能登食祭市場": 14.3, "千里浜なぎさドライブウェイ": 9.5, "のとじま水族館": 4.8, "道の駅わじま": 4.8, "輪島漆芸美術館": 4.8, "コンセールのと": 4.8, "中島": 4.8}, "top_next_places": {"千里浜なぎさドライブウェイ": 14.3, "のとじま水族館": 4.8, "能登食祭市場": 4.8, "道の駅のとじま": 4.8, "金沢駅周辺": 4.8, "兼六園": 4.8, "パトリア・はま寿司・ダイソー": 4.8, "21世紀美術館": 4.8}, "top_facilities": {"のと鉄道（通常）": 100.0}, "top_companions": {"自分ひとり": 85.7, "中学生以上連れの家族": 4.8, "友人": 4.8, "団体旅行": 4.8}, "top_prefectures": {"石川県": 19.0, "埼玉県": 14.3, "東京都": 14.3, "千葉県": 9.5, "京都府": 9.5, "大阪府": 9.5}}, "orientation_scores_0_100": {"rail": 39.8, "scenery": 24.5, "recovery": 0.0, "family": 3.3, "food": 21.9, "onsen": 15.7, "mobility": 69.8, "local_repeat": 33.1}, "narrative": "この層は、のと鉄道の魅力を感じながらも、評価を左右するのは接続の分かりやすさである。路線バス、在来線、空港、駅からの徒歩、タクシーの選択肢を比較しながら動くため、情報が分散すると不満が出やすい。観光PRよりも、時刻・乗り場・代替手段・遅れた時の選択肢が安心材料になる。", "psychology": ["移動の不確実性を強く嫌う", "事前に時刻表・乗換・代替手段を確認したい", "本数が少なくても、情報が明確なら納得しやすい", "一人旅や短期滞在でも、効率よく能登を回りたい"], "jobs_to_be_done": {"functional": ["鉄道・バス・空港・駅を無駄なく接続したい", "遅延や乗り遅れがあっても代替ルートを把握したい"], "emotional": ["慣れない能登でも不安なく動きたい", "段取りがうまくいったという安心感を得たい"], "social": ["同行者や仕事相手に迷惑をかけず移動したい", "短時間でも能登を楽しめたと言える体験を持ち帰りたい"]}, "pain_points": ["バス本数や接続の悪さが大きな不満になる", "交通情報と観光情報が別々に存在している", "キャッシュレス・切符購入・乗り場案内が分かりにくい"], "message_hooks": ["迷わず乗れる、のと鉄道ルート案内", "本数が少なくても、旅は組み立てられる", "駅・バス・空港をつなぐ能登の動線"], "recommended_actions": [{"action": "のと鉄道＋バス＋空港の接続検索表を作る", "why_it_works": "最大の不満である接続不安を下げられる", "related_persona_need": "予定通り移動したい"}, {"action": "切符購入・キャッシュレス情報を明示する", "why_it_works": "初訪問者のつまずきを減らせる", "related_persona_need": "乗る前に迷いたくない"}, {"action": "代替ルートを表示する", "why_it_works": "一本逃した時の不安を軽減できる", "related_persona_need": "旅程崩壊を避けたい"}], "sample_voice": "バス運行本数が少ない / 能登に食事出来る場所を増やしてほしい", "sample_comments": ["バス運行本数が少ない", "能登に食事出来る場所を増やしてほしい", "能登空港に午前中到着の便で輪島市内に行く公共交通機関の時間が全く合っていない", "年始でも開いていた（輪島はゴーゴーカレー以外開いていなかった）"], "representative_keywords": ["バス", "駅", "本数", "土産", "接続", "輪島", "景色", "列車", "不便", "鉄道", "ポケモン", "食事"], "chat_profile": {"speaking_style": "落ち着いた一人称。観光客としての実感と、移動・消費・不便の判断基準を具体的に話す。", "first_person": "私", "decision_criteria": ["移動の不確実性を強く嫌う", "事前に時刻表・乗換・代替手段を確認したい", "本数が少なくても、情報が明確なら納得しやすい", "バス本数や接続の悪さが大きな不満になる", "交通情報と観光情報が別々に存在している"], "likely_questions_to_answer": ["どんな情報発信に反応するか", "何が不満か", "どうすれば消費が増えるか", "どんなルートなら行きたいか", "人に薦める理由は何か"], "do_not_say": ["データにない属性を断定しない", "全員が鉄道ファンだと決めつけない", "復興を過度に感動消費として語らない"], "system_prompt": "あなたは「時刻表設計者・村上さん」です。本数と接続を読み切りたい公共交通プランナーという合成人格として、一人称で答えてください。回答はのと鉄道アンケートデータに基づけます。数値にないことは仮説として明示し、旅行者心理、消費、情報接点、施設改善の観点を入れてください。信頼度はmediumです。"}}], "cross_persona_insights": {"largest_segments": ["食と温泉を組み合わせる能登周遊トラベラー（26.0%）", "復旧した線路に乗って応援する敬意ある能登訪問者（19.2%）", "POKÉMON列車で思い出を作る親子・キャラ体験層（14.3%）", "車窓とローカル線を旅の目的にする鉄道風景トラベラー（14.1%）"], "high_value_opportunities": ["食・温泉層と復興応援層は旅行総消費中央値が高く、のと鉄道から周辺消費へ接続する余地が大きい", "車窓・鉄道体験層は施設NPSが高く、車窓コンテンツや駅周辺滞在で推奨拡散が狙える", "POKÉMON列車層は旅全体NPSが高く、親子向けモデルコース化で来訪理由を強化できる"], "common_pain_points": ["本数・接続・バス時刻・切符購入など、移動情報の分かりにくさ", "駅周辺の食事・休憩・土産購入導線の弱さ", "復興情報と観光情報が分断され、訪問計画に落とし込みにくい"], "content_strategy": ["車窓を目的化する：おすすめ座席、見どころ、駅ごとの写真スポットを提示", "ダイヤ連動のモデルコースを作る：鉄道・バス・温泉・食を1枚で見せる", "応援乗車の導線を整える：訪問可能エリア、応援消費、静かな復興ストーリーを掲載", "親子・キャラ体験を一日化する：POKÉMON列車、食事、休憩、周辺スポットを接続"], "facility_improvement_hints": ["切符購入・キャッシュレス・乗り場案内の初見対応を強化", "駅周辺飲食と営業情報を見える化", "一人旅・親子・応援乗車で入口を分けたLPを作成", "不便を感じた人向けに代替交通・待ち時間の過ごし方を提示"]}, "analysis_log": {"python_used": true, "methods_used": ["レンジ金額の中央値化", "満足度の5段階数値化", "NPS集計", "自由記述の辞書スコアリング", "ルールベースペルソナ分類"], "limitations": ["自由記述の意味解析は簡易辞書ベース", "金額はレンジの中央値であり実額ではない", "一部ペルソナは施策仮説としての分類であり、厳密な因果推論ではない"], "recommended_next_analysis": ["時期別・曜日別の乗車ニーズ比較", "不便あり/なし別のNPS差の検定", "前後立寄りスポットから回遊ネットワークを可視化", "POKÉMON列車だけの深掘り分析"]}};
+    const state = { selectedId: DATA.personas[0].persona_id, insightMode: "psychology", jobMode: "functional", chat: [] };
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    const yen = (v) => v == null ? "—" : new Intl.NumberFormat("ja-JP").format(v) + "円";
+    const pct = (v) => v == null ? "—" : Number(v).toFixed(1) + "%";
+    const score = (v) => v == null ? "—" : Number(v).toFixed(1);
+
+    function fmt(value, format) {
+      if (format === "yen") return yen(value);
+      if (format === "pct") return pct(value);
+      if (format === "score") return score(value);
+      if (format === "number") return new Intl.NumberFormat("ja-JP").format(value);
+      return value ?? "—";
+    }
+
+    function activePersona() {
+      return DATA.personas.find(p => p.persona_id === state.selectedId) || DATA.personas[0];
+    }
+
+    function confidenceClass(conf) {
+      if ((conf || "").includes("low")) return "low";
+      if ((conf || "").includes("medium")) return "medium";
+      return "";
+    }
+
+    function renderOverall() {
+      const o = DATA.overall.summary_kpi;
+      const cards = [
+        ["回答数", DATA.overall.row_count, "number"],
+        ["旅行総消費中央値", o.trip_total_spend_median_yen, "yen"],
+        ["施設消費中央値", o.facility_spend_median_yen, "yen"],
+        ["施設NPS", o.facility_nps_score, "score"],
+        ["旅全体NPS", o.trip_nps_score, "score"],
+        ["不便あり", o.inconvenience_pct, "pct"]
+      ];
+      $("overallKpis").innerHTML = cards.map(([label, val, format]) => `<div class="kpi"><span>${esc(label)}</span><b>${esc(fmt(val, format))}</b></div>`).join("");
+    }
+
+    function renderList() {
+      const q = $("searchInput").value.trim().toLowerCase();
+      const filtered = DATA.personas.filter(p => !q || JSON.stringify(p).toLowerCase().includes(q));
+      $("personaList").innerHTML = filtered.map(p => `
+        <button class="persona-card ${p.persona_id === state.selectedId ? "active" : ""}" data-id="${esc(p.persona_id)}">
+          <div class="top">
+            <div><strong>${esc(p.name_ja)}</strong><small>${esc(p.nickname)}</small></div>
+            <span class="badge ${confidenceClass(p.data_support.confidence)}">${esc(p.data_support.confidence)}</span>
+          </div>
+          <div class="mini-meta">
+            <div><b>${p.data_support.n}</b><span>n</span></div>
+            <div><b>${p.data_support.share_pct}%</b><span>share</span></div>
+            <div><b>${score(p.data_points.facility_nps_score)}</b><span>NPS</span></div>
+          </div>
+        </button>
+      `).join("") || `<div class="empty">該当するペルソナがありません。</div>`;
+      document.querySelectorAll(".persona-card").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedId = btn.dataset.id;
+          resetChat();
+          renderAll();
+        });
+      });
+    }
+
+    function renderHeader(p) {
+      const badge = $("confidenceBadge");
+      badge.textContent = p.data_support.confidence;
+      badge.className = `badge ${confidenceClass(p.data_support.confidence)}`;
+      $("personaName").textContent = p.name_ja;
+      $("personaNickname").textContent = p.nickname + "｜" + p.one_line_summary;
+      $("personaNarrative").textContent = p.narrative;
+      $("supportN").textContent = `n=${p.data_support.n}`;
+      $("supportShare").textContent = `構成比 ${p.data_support.share_pct}%`;
+      $("supportConfidence").textContent = p.data_support.confidence_note;
+      const d = p.data_points;
+      const kpis = DATA.visualization_config.kpi_cards.map(c => [c.label_ja, d[c.key], c.format]);
+      $("kpiGrid").innerHTML = kpis.map(([label, value, format]) => `<div class="kpi"><span>${esc(label)}</span><b>${esc(fmt(value, format))}</b></div>`).join("");
+    }
+
+    function drawRadar(p) {
+      const canvas = $("radar");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+      const axes = DATA.visualization_config.radar_axes;
+      const cx = W/2, cy = H/2 + 8;
+      const maxR = Math.min(W,H) * .34;
+      ctx.save();
+      for (let l=1; l<=5; l++) {
+        const r = maxR*l/5;
+        ctx.beginPath();
+        axes.forEach((axis,i) => {
+          const a = -Math.PI/2 + i*2*Math.PI/axes.length;
+          const x = cx + Math.cos(a)*r, y = cy + Math.sin(a)*r;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.closePath(); ctx.strokeStyle="rgba(45,55,72,.12)"; ctx.lineWidth=1; ctx.stroke();
+      }
+      axes.forEach((axis,i) => {
+        const a = -Math.PI/2 + i*2*Math.PI/axes.length;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*maxR, cy+Math.sin(a)*maxR);
+        ctx.strokeStyle="rgba(45,55,72,.10)"; ctx.stroke();
+        const lx = cx + Math.cos(a)*(maxR+42), ly = cy + Math.sin(a)*(maxR+32);
+        ctx.fillStyle="#2D3748"; ctx.font="700 14px -apple-system, BlinkMacSystemFont, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(axis.label_ja, lx, ly);
+        ctx.fillStyle="#718096"; ctx.font="12px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(Number(p.orientation_scores_0_100[axis.key] || 0).toFixed(1), lx, ly+17);
+      });
+      const pts = axes.map((axis,i) => {
+        const a = -Math.PI/2 + i*2*Math.PI/axes.length;
+        const r = maxR * ((p.orientation_scores_0_100[axis.key] || 0)/100);
+        return [cx+Math.cos(a)*r, cy+Math.sin(a)*r];
+      });
+      const grad = ctx.createLinearGradient(cx-maxR,cy,cx+maxR,cy);
+      grad.addColorStop(0,"rgba(79,209,197,.32)");
+      grad.addColorStop(1,"rgba(154,230,180,.42)");
+      ctx.beginPath(); pts.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y)); ctx.closePath();
+      ctx.fillStyle=grad; ctx.fill(); ctx.strokeStyle="rgba(56,178,172,.95)"; ctx.lineWidth=3; ctx.stroke();
+      pts.forEach(([x,y]) => { ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="rgba(56,178,172,.95)"; ctx.lineWidth=2; ctx.stroke(); });
+      ctx.restore();
+    }
+
+    function renderBars(p) {
+      const sections = DATA.visualization_config.bar_sections;
+      $("dynamicBars").innerHTML = sections.map(sec => {
+        const obj = p.data_points[sec.key] || {};
+        const entries = Object.entries(obj).sort((a,b) => b[1]-a[1]).slice(0,6);
+        if (!entries.length) return "";
+        const max = Math.max(...entries.map(e => e[1]), 100);
+        return `<div><h3 style="margin:0 0 10px;font-size:16px">${esc(sec.label_ja)}</h3><div class="bar-list">` +
+          entries.map(([name,val]) => `<div class="bar-row"><div class="bar-label"><b>${esc(name)}</b><span>${Number(val).toFixed(1)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, val/max*100)}%"></div></div></div>`).join("") +
+          `</div></div>`;
+      }).join(`<div style="height:10px"></div>`);
+    }
+
+    function renderProfile(p) {
+      const s = p.synthetic_profile;
+      const items = [
+        ["年代", s.age_core],
+        ["発地", s.source_region],
+        ["同行者", s.companion],
+        ["世帯年収", s.household_income],
+        ["主な行動", s.typical_behavior.join("、")],
+        ["典型施設", s.typical_facilities.join("、")]
+      ];
+      $("profileGrid").innerHTML = items.map(([k,v]) => `<div class="profile-item"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
+    }
+
+    function renderInsightTabs(p) {
+      const tabs = [["psychology","心理"],["pain_points","痛点"],["message_hooks","訴求"]];
+      $("insightTabs").innerHTML = tabs.map(([id,label]) => `<button class="tab ${state.insightMode===id?"active":""}" data-tab="${id}">${label}</button>`).join("");
+      document.querySelectorAll("#insightTabs .tab").forEach(t => t.addEventListener("click", () => { state.insightMode=t.dataset.tab; renderInsights(activePersona()); }));
+      renderInsights(p);
+    }
+
+    function renderInsights(p) {
+      const items = p[state.insightMode] || [];
+      $("insightList").innerHTML = items.map(x => `<li>${esc(x)}</li>`).join("");
+      document.querySelectorAll("#insightTabs .tab").forEach(t => t.classList.toggle("active", t.dataset.tab === state.insightMode));
+    }
+
+    function renderJobTabs(p) {
+      const tabs = [["functional","機能的JOB"],["emotional","情緒的JOB"],["social","社会的JOB"]];
+      $("jobTabs").innerHTML = tabs.map(([id,label]) => `<button class="tab ${state.jobMode===id?"active":""}" data-job="${id}">${label}</button>`).join("");
+      document.querySelectorAll("#jobTabs .tab").forEach(t => t.addEventListener("click", () => { state.jobMode=t.dataset.job; renderJobs(activePersona()); }));
+      renderJobs(p);
+    }
+
+    function renderJobs(p) {
+      const items = p.jobs_to_be_done[state.jobMode] || [];
+      $("jobList").innerHTML = items.map(x => `<li>${esc(x)}</li>`).join("");
+      document.querySelectorAll("#jobTabs .tab").forEach(t => t.classList.toggle("active", t.dataset.job === state.jobMode));
+    }
+
+    function renderActions(p) {
+      $("actionList").innerHTML = (p.recommended_actions || []).map(a => `<li><b>${esc(a.action)}</b><br><span style="color:#718096">${esc(a.why_it_works)}｜${esc(a.related_persona_need)}</span></li>`).join("");
+    }
+
+    function renderVoice(p) {
+      $("keywordTags").innerHTML = (p.representative_keywords || []).map(k => `<span class="tag">${esc(k)}</span>`).join("");
+      $("sampleVoice").textContent = p.sample_voice || "自由記述サンプルが少ないため、代表ボイスは限定的です。";
+    }
+
+    function renderComparison() {
+      const rows = DATA.personas.map(p => `<tr><td>${esc(p.nickname)}</td><td>${p.data_support.n}</td><td>${p.data_support.share_pct}%</td><td>${yen(p.data_points.trip_total_spend_median_yen)}</td><td>${score(p.data_points.facility_nps_score)}</td><td>${pct(p.data_points.inconvenience_pct)}</td></tr>`).join("");
+      $("comparisonTable").innerHTML = `<thead><tr><th>ペルソナ</th><th>n</th><th>構成比</th><th>旅行総消費</th><th>施設NPS</th><th>不便あり</th></tr></thead><tbody>${rows}</tbody>`;
+    }
+
+    function pickLines(arr,n=3) { return (arr || []).slice(0,n).map(x => "・" + x).join("\n"); }
+    function objectLines(obj,n=5) { return Object.entries(obj || {}).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k,v]) => `・${k}：${Number(v).toFixed(1)}%`).join("\n"); }
+
+    function resetChat() {
+      const p = activePersona();
+      state.chat = [{ role:"bot", text:`こんにちは。${p.nickname}です。\n私は「${p.name_ja}」というペルソナです。${p.one_line_summary}\n\n情報発信、回遊、消費、痛点、JOB、改善施策について聞いてください。` }];
+      renderChat();
+    }
+
+    function addMessage(role,text) { state.chat.push({role,text}); renderChat(); }
+
+    function answerFor(p, q) {
+      const t = q.toLowerCase();
+      const d = p.data_points;
+      if (/消費|売上|買う|土産|購入|単価/.test(t)) {
+        return `私の旅行総消費中央値は${yen(d.trip_total_spend_median_yen)}、施設消費中央値は${yen(d.facility_spend_median_yen)}です。\n\n消費を増やすなら、ただ商品を増やすより、乗車前後の理由づけが大切です。\n${pickLines(p.recommended_actions.map(a=>a.action),3)}`;
+      }
+      if (/不満|不便|困る|改善|課題|ペイン/.test(t)) {
+        return `私がつまずきやすいのはこのあたりです。\n${pickLines(p.pain_points,4)}\n\n不便ありはこのペルソナで${pct(d.inconvenience_pct)}です。情報の見せ方だけで解消できる部分も多いと思います。`;
+      }
+      if (/情報|sns|発信|広告|instagram|x|検索|媒体/.test(t)) {
+        return `情報源では、次の接点が効いています。\n${objectLines(d.top_info_sources,6)}\n\n発信では、抽象的な観光PRより「いつ乗るか」「降りた後どうするか」「何が見えるか」まで一緒に見せてほしいです。`;
+      }
+      if (/交通|移動|バス|駅|空港|接続|本数|時刻|切符|キャッシュレス/.test(t)) {
+        return `移動面では、次の交通手段が中心です。\n${objectLines(d.top_transport_to_facility,6)}\n\n特に本数・接続・乗り場・切符購入が分かると、のと鉄道は「不便な交通」ではなく「計画して楽しむ体験」になります。`;
+      }
+      if (/復興|応援|震災|再開|支援/.test(t)) {
+        return `復興や応援については、強く煽るより、静かに今の状況が分かる情報がほしいです。\n${pickLines(p.jobs_to_be_done.functional,2)}\n${pickLines(p.jobs_to_be_done.emotional,2)}`;
+      }
+      if (/車窓|景色|鉄道|列車|電車|駅|ローカル/.test(t)) {
+        return `鉄道体験については、私にとって移動時間そのものが旅の価値になります。\n\n代表キーワードは「${(p.representative_keywords || []).slice(0,6).join("、")}」。\n\n響く言葉は、\n${pickLines(p.message_hooks,3)}`;
+      }
+      if (/家族|子ども|親子|ポケモン|pokemon/.test(t)) {
+        return `親子・同行者目線では「乗る前後」まで安心できることが大事です。\n${pickLines(p.psychology,4)}\n\n写真、休憩、食事、トイレ、乗車記念までセットにすると満足度が上がります。`;
+      }
+      if (/job|ジョブ|jtbd|機能|情緒|社会/.test(t)) {
+        return `私のJOBはこうです。\n\n【機能的JOB】\n${pickLines(p.jobs_to_be_done.functional,3)}\n\n【情緒的JOB】\n${pickLines(p.jobs_to_be_done.emotional,3)}\n\n【社会的JOB】\n${pickLines(p.jobs_to_be_done.social,3)}`;
+      }
+      if (/目的|何を|したい|観光|ルート|コース/.test(t)) {
+        return `訪問目的の上位は次の通りです。\n${objectLines(d.top_purposes,6)}\n\nこの目的に、のと鉄道の車窓・駅・前後の食や温泉をどう接続するかが重要です。`;
+      }
+      return `私の立場から見ると、重要なのは「${p.jobs_to_be_done.emotional[0]}」です。\n\n判断基準は、\n${pickLines(p.psychology,3)}\n\n施策にするなら、${p.recommended_actions[0]?.action || p.message_hooks[0]} がまず有効だと思います。`;
+    }
+
+    function renderChat() {
+      const box = $("chatMessages");
+      box.innerHTML = state.chat.map(m => `<div class="msg ${m.role === "user" ? "user" : "bot"}">${esc(m.text)}</div>`).join("");
+      box.scrollTop = box.scrollHeight;
+      const p = activePersona();
+      $("chatTitle").textContent = `${p.nickname} と話す`;
+      const qs = ["どんな情報発信に反応しますか？","不満点は？","消費を増やすには？","交通面の課題は？","JOBを教えて","人に薦める理由は？"];
+      $("quickQuestions").innerHTML = qs.map(q => `<button class="quick" data-q="${esc(q)}">${esc(q)}</button>`).join("");
+      document.querySelectorAll(".quick").forEach(btn => btn.addEventListener("click", () => ask(btn.dataset.q)));
+    }
+
+    function ask(q) {
+      if (!q.trim()) return;
+      const p = activePersona();
+      addMessage("user", q.trim());
+      setTimeout(() => addMessage("bot", answerFor(p, q.trim())), 80);
+    }
+
+    function renderCopyPrompt(p) {
+      return `あなたは「${p.nickname}」です。以下のデータに基づく「${p.name_ja}」という合成人格として、一人称で回答してください。数値にないことは仮説として明示してください。\n\nナラティブ:\n${p.narrative}\n\n心理:\n${p.psychology.map(x=>"- "+x).join("\n")}\n\n痛点:\n${p.pain_points.map(x=>"- "+x).join("\n")}\n\nJOB:\n${JSON.stringify(p.jobs_to_be_done,null,2)}\n\nデータ:\n${JSON.stringify(p.data_points,null,2)}`;
+    }
+
+    function renderModal() {
+      const ci = DATA.cross_persona_insights;
+      const block = (title, arr) => `<h3 style="margin:1rem 0 .4rem">${esc(title)}</h3><ul class="list-block">${(arr||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+      $("modalBody").innerHTML =
+        block("大きなセグメント", ci.largest_segments) +
+        block("高付加価値化の機会", ci.high_value_opportunities) +
+        block("共通の痛点", ci.common_pain_points) +
+        block("コンテンツ戦略", ci.content_strategy) +
+        block("改善ヒント", ci.facility_improvement_hints);
+    }
+
+    function renderAll() {
+      const p = activePersona();
+      renderOverall(); renderList(); renderHeader(p); drawRadar(p); renderBars(p); renderProfile(p);
+      renderInsightTabs(p); renderJobTabs(p); renderActions(p); renderVoice(p); renderComparison(); renderChat(); renderModal();
+    }
+
+    $("searchInput").addEventListener("input", renderList);
+    $("chatForm").addEventListener("submit", e => { e.preventDefault(); const input=$("chatInput"); ask(input.value); input.value=""; input.focus(); });
+    $("resetChatBtn").addEventListener("click", resetChat);
+    $("copyPromptBtn").addEventListener("click", async () => {
+      const prompt = renderCopyPrompt(activePersona());
+      try { await navigator.clipboard.writeText(prompt); $("copyPromptBtn").textContent="コピーしました"; setTimeout(()=>$("copyPromptBtn").textContent="AI用プロンプトをコピー",1300); }
+      catch(e) { alert(prompt); }
+    });
+    $("openInsightBtn").addEventListener("click", () => $("insightModal").classList.remove("hidden"));
+    $("closeInsightBtn").addEventListener("click", () => $("insightModal").classList.add("hidden"));
+    $("insightModal").addEventListener("click", (e) => { if (e.target.id === "insightModal") $("insightModal").classList.add("hidden"); });
+    resetChat();
+    renderAll();
+    window.addEventListener("resize", () => drawRadar(activePersona()));
+  </script>
+</body>
+</html>
