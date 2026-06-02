@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Milli 高収入高消費層ペルソナ・チャット可視化</title>
+  <title>TIFO for NICHE - 石川県ニッチ観光客マーケティングツール</title>
   <style>
     :root {
       --tifo-bg: #F7FAFC;
@@ -129,6 +129,17 @@
       font-size: clamp(0.96rem, 1.5vw, 1.08rem);
     }
 
+    .dataset-switcher {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--tifo-card-border);
+    }
+
     .toolbar {
       position: relative;
       z-index: 1;
@@ -137,7 +148,7 @@
       gap: 0.8rem;
       align-items: center;
       justify-content: space-between;
-      margin-top: 1.75rem;
+      margin-top: 1.5rem;
     }
 
     .search-wrap {
@@ -496,16 +507,14 @@
 
     .bar-label b { font-weight: 850; }
 
-    .bar-track,
-    .progress-bar-bg {
+    .bar-track {
       background-color: #EDF2F7;
       border-radius: 9999px;
       overflow: hidden;
       height: 1.25rem;
     }
 
-    .bar-fill,
-    .progress-bar {
+    .bar-fill {
       background-color: var(--tifo-primary);
       height: 100%;
       border-radius: 9999px;
@@ -780,56 +789,6 @@
       border: 1px solid var(--tifo-card-border);
     }
 
-    .rank-badge {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: white;
-      flex-shrink: 0;
-    }
-
-    .rank-1 { background-color: #FFD700; }
-    .rank-2 { background-color: #C0C0C0; }
-    .rank-3 { background-color: #CD7F32; }
-    .rank-4,
-    .rank-5,
-    .rank-badge.rank-default { background-color: #A9A9A9; }
-
-    .nps-bar-container {
-      position: relative;
-      background: linear-gradient(to right, #FEB2B2, #EDF2F7, #9AE6B4);
-      height: 0.75rem;
-      border-radius: 9999px;
-    }
-
-    .nps-bar-marker {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 2px;
-      height: 1.25rem;
-      background-color: rgba(113, 128, 150, 0.5);
-      border-radius: 1px;
-    }
-
-    .nps-bar-value {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 0.75rem;
-      height: 0.75rem;
-      background-color: var(--tifo-text);
-      border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 0 5px rgba(0,0,0,0.3);
-      transition: left 0.5s ease-in-out;
-    }
-
     .custom-scrollbar::-webkit-scrollbar,
     .sidebar::-webkit-scrollbar,
     .chat-messages::-webkit-scrollbar {
@@ -927,6 +886,7 @@
         background: #fff;
       }
 
+      .dataset-switcher,
       .toolbar,
       .sidebar,
       .chat-form,
@@ -978,17 +938,22 @@
 <body>
   <div class="app">
     <header class="hero">
-      <div class="eyebrow">柏川健観光アンケートデータ Milli / highsalary_highconsume</div>
-      <h1>観光客ペルソナを、選び、眺め、対話する。</h1>
+      <div class="eyebrow">石川県観光アンケートデータ Milli</div>
+      <h1>TIFO for NICHE</h1>
       <p>
-        観光アンケートから作成した高収入・高消費層ペルソナを、合成人格として可視化したプロトタイプです。
-        ペルソナカードを選ぶと、属性・消費・NPS・志向性スコア・JOB・訴求メッセージが切り替わり、
-        そのペルソナらしい簡易チャットができます。
+        観光アンケートから抽出したニッチターゲット（「九谷焼関心層」「高収入高消費層」）を、合成人格として可視化したマーケティングツールです。<br>
+        データセットを切り替えてペルソナカードを選ぶと、属性・消費・志向性スコア・JOB・訴求メッセージが切り替わり、そのペルソナらしい簡易チャットができます。
       </p>
+
+      <div class="dataset-switcher">
+        <button class="btn" id="btnKutani">九谷焼関心層 ペルソナ</button>
+        <button class="btn secondary" id="btnHighIncome">高収入高消費層 ペルソナ</button>
+      </div>
+
       <div class="toolbar">
         <label class="search-wrap">
           <span>検索</span>
-          <input id="searchInput" type="search" placeholder="例：食、移動、家族、温泉、復興、文化..." />
+          <input id="searchInput" type="search" placeholder="例：食、移動、家族、温泉、文化..." />
         </label>
         <button class="btn secondary" id="resetChatBtn">チャットをリセット</button>
         <button class="btn" onclick="window.print()">印刷・PDF化</button>
@@ -1070,14 +1035,14 @@
           <div class="chat-head">
             <div>
               <h2 id="chatTitle">ペルソナチャット</h2>
-              <small>このチャットは埋め込みJSONから返す簡易ルールベースです。APIキー不要でそのまま動きます。</small>
+              <small>このチャットは埋め込みJSONから返す簡易ルールベースです。対象ペルソナとして応答します。</small>
             </div>
             <button class="btn secondary" id="copyPromptBtn">AI用プロンプトをコピー</button>
           </div>
           <div id="chatMessages" class="chat-messages"></div>
           <div class="quick-questions" id="quickQuestions"></div>
           <form class="chat-form" id="chatForm">
-            <input id="chatInput" placeholder="例：どんな情報発信に反応しますか？ 消費を増やすには？ 不満点は？" autocomplete="off" />
+            <input id="chatInput" placeholder="例：情報発信のコツは？ 消費を増やすには？ 不満点は？" autocomplete="off" />
             <button type="submit">送信</button>
           </form>
         </section>
@@ -1086,524 +1051,455 @@
   </div>
 
   <script>
-    const DATA = {
-  "schema_version": "1.1",
-  "dataset": "柏川健観光アンケートデータMilli / highsalary_highconsume",
-  "segment": "世帯年収1,500万円以上かつ高消費層",
-  "note": "各ペルソナは、回答者の支配的アーキタイプ、属性集計、消費中央値、NPS、自由記述の辞書スコアから作成した合成人格。nが小さいものは exploratory として扱う。",
-  "personas": [
-    {
-      "persona_id": "persona_01_gourmet_local_taste_seeker",
-      "name_ja": "上質な土地の味を外したくない夫婦・家族トラベラー",
-      "nickname": "味覚編集者・佐伯さん",
-      "archetype_id": "gourmet_local_taste_seeker",
-      "data_support": {
-        "n": 110,
-        "share_pct": 46.8,
-        "confidence": "high"
-      },
-      "synthetic_profile": {
-        "age_core": "40〜50代中心、特に50代が厚い",
-        "household_income": "1,500万円以上",
-        "source_region": "首都圏中心、北陸・関西・中京も一定数",
-        "companion": "家族・親族、夫婦が中心",
-        "main_area": "加賀・金沢・能登に広く分布。宿・空港・水族館・駅など接点が広い",
-        "typical_facilities": [
-          "のとじま水族館",
-          "小松空港",
-          "たちばな四季亭",
-          "KOKOHOTEL Premier 金沢香林坊",
-          "金沢駅"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 92500,
-        "facility_spend_median_yen": 7500,
-        "total_with_facility_median_yen": 115000,
-        "facility_nps_mean": 8.95,
-        "revisit_within_1year_pct": 70.0,
-        "top_purposes": {
-          "地元の美味しいものを食べる": 96.4,
-          "温泉や露天風呂": 46.4,
-          "宿でのんびり過ごす": 45.5,
-          "名所・旧跡": 34.5
+    // ----------------------------------------------------
+    // データセット定義：九谷焼関心層
+    // ----------------------------------------------------
+    const DATA_KUTANI = {
+      "schema_version": "1.1",
+      "dataset": "柏川健観光アンケートデータMilli / shelikeskutani",
+      "segment": "九谷焼に興味がありそうな回答者",
+      "personas": [
+        {
+          "persona_id": "kutani_01_onsen_kutani_retreat_stayer",
+          "name_ja": "温泉宿で器と食を味わう加賀リトリート層",
+          "nickname": "器で休む人・白石さん",
+          "data_support": { "n": 123, "share_pct": 35.3, "confidence": "high" },
+          "synthetic_profile": {
+            "age_core": "50代25.2%、60代22.8%、40代20.3%",
+            "household_income": "1,000万円以上 1,200万円未満13.0%、600万円以上 700万円未満11.4%",
+            "source_region": "関西33.3%、首都圏22.8%、中京21.1%",
+            "companion": "夫婦2人50.4%、小学生以下連れの家族12.2%、親9.8%",
+            "main_area": "加賀エリア95.9%",
+            "typical_facilities": ["法師旅館", "ポイントバケーション加賀山中", "ゆのくに天祥", "山代温泉　総湯", "たちばな四季亭"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 65000,
+            "facility_spend_median_yen": 4000,
+            "total_with_facility_median_yen": 72500,
+            "facility_nps_mean": 8.1,
+            "revisit_within_1year_pct": 54.5,
+            "top_purposes": { "温泉や露天風呂": 90.2, "地元の美味しいものを食べる": 70.7, "宿でのんびり過ごす": 69.1 },
+            "top_info_sources": { "インターネット・アプリ": 56.9, "新聞・雑誌・ガイドブック": 19.5, "Instagram": 17.1 },
+            "top_transport_to_ishikawa": { "自家用車": 54.5, "新幹線": 30.9, "在来線": 13.8 }
+          },
+          "orientation_scores_0_100": { "food": 47.8, "culture": 25.9, "craft": 23.2, "shopping": 8.3, "relax": 86.7, "mobility": 16.4, "family": 16.3, "premium": 24.6 },
+          "narrative": "九谷焼への関心は、美術館や専門店だけでなく、宿の食事、温泉街の土産、館内のしつらえの中で立ち上がる。観光スポットを大量に回るより、温泉・部屋・食事・接客が整った滞在の中で、石川らしい器や工芸に自然に触れたい。九谷焼は『買う対象』であると同時に、料理や宿の雰囲気を上質に見せる記憶装置になっている。",
+          "psychology": [
+            "旅の主目的は休息だが、器・食・空間に地域性があると満足度が上がる",
+            "九谷焼を専門的に学ぶより、宿泊体験の中で自然に出会う方が入りやすい",
+            "接客、清潔感、料理、温泉の完成度から価格への納得感を判断する",
+            "夫婦・家族に『いい宿を選んだ』と思われることも重要"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["温泉・食事・部屋・土産が一体で満足できる宿を選びたい", "移動しすぎず、宿や温泉街の中で九谷焼や地域文化に触れたい"],
+            "emotional": ["日常から離れて、丁寧に扱われている感覚を得たい", "器や食の美しさから、石川に来た実感を持ち帰りたい"],
+            "social": ["夫婦や家族に、良い宿・良い食事・良い土産を選んだと思われたい", "石川らしい上質な滞在として周囲に薦めたい"]
+          },
+          "pain_points": [
+            "宿の中で九谷焼に触れられても、購入・体験・周辺スポットへの導線が弱い",
+            "温泉、食、工芸の情報が別々で、旅程として組み立てにくい",
+            "車前提の温泉地では、公共交通利用者にとって移動の見通しが立ちにくい"
+          ],
+          "message_hooks": [
+            "器まで味わう、加賀温泉の一泊",
+            "九谷焼のうつわで、石川の食をゆっくり楽しむ",
+            "湯・食・器がひとつになる加賀の休息"
+          ],
+          "sample_voice": "旅館の夕食で九谷焼に触れたこと、九谷焼体験や工芸品をもっと楽しみたいという声が見られる。"
         },
-        "top_info_sources": {
-          "インターネット・アプリ": 57.3,
-          "Instagram": 23.6,
-          "観光展・物産展": 20.0,
-          "新聞・雑誌・ガイドブック": 19.1,
-          "友人・知人": 19.1
+        {
+          "persona_id": "kutani_02_gourmet_citywalk_design_couple",
+          "name_ja": "金沢・加賀を食とまち歩きで編集する夫婦旅層",
+          "nickname": "食文化編集者・佐伯さん",
+          "data_support": { "n": 104, "share_pct": 29.9, "confidence": "high" },
+          "synthetic_profile": {
+            "age_core": "50代32.7%、30代21.2%、40代20.2%",
+            "household_income": "1,500万円以上13.5%、400万円以上 500万円未満12.5%",
+            "source_region": "首都圏39.4%、関西22.1%、中京14.4%",
+            "companion": "夫婦2人35.6%、恋人14.4%、親8.7%",
+            "main_area": "金沢エリア68.3%、加賀エリア27.9%",
+            "typical_facilities": ["金沢中央観光案内所", "KOKOHOTEL Premier 金沢香林坊", "金沢駅", "金沢城公園", "兼六園"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 65000,
+            "facility_spend_median_yen": 2000,
+            "total_with_facility_median_yen": 72500,
+            "facility_nps_mean": 8.5,
+            "revisit_within_1year_pct": 56.7,
+            "top_purposes": { "地元の美味しいものを食べる": 88.5, "名所、旧跡の観光": 67.3, "まちあるき、都市散策": 51.0 },
+            "top_info_sources": { "インターネット・アプリ": 57.7, "Instagram": 30.8, "新聞・雑誌・ガイドブック": 26.0 },
+            "top_transport_to_ishikawa": { "新幹線": 53.8, "自家用車": 27.9, "在来線": 25.0 }
+          },
+          "orientation_scores_0_100": { "food": 61.2, "culture": 66.0, "craft": 25.2, "shopping": 19.9, "relax": 31.4, "mobility": 26.1, "family": 17.0, "premium": 21.7 },
+          "narrative": "金沢や加賀の街並み、兼六園、近江町市場などを歩きながら、食と文化をまとめて楽しむ層。九谷焼は単独目的というより、寿司、加賀料理、街並み、土産、ギャラリー巡りの中で『石川らしさ』を確かめる手がかりになる。夫婦・恋人・親との旅が多く、限られた滞在時間で外さない食事と見どころを組み合わせたい。",
+          "psychology": [
+            "旅の満足は、食・街並み・文化が破綻なくつながることで決まる",
+            "九谷焼は、食器・土産・若手作家作品などから自然に関心が高まる",
+            "同行者に『金沢らしい良い旅だった』と言ってもらいたい"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["食事、名所、まち歩き、九谷焼の買い物を効率よく組み合わせたい"],
+            "emotional": ["食と器と街並みがつながることで、石川らしさを感じたい"],
+            "social": ["同行者に、旅程を選んだ人としてのセンスを評価されたい"]
+          },
+          "pain_points": [
+            "夕方以降に閉まる店が多いと、街歩きと買い物の満足度が落ちる",
+            "有名観光地、飲食、九谷焼の店が別々に紹介されていて回りにくい"
+          ],
+          "message_hooks": [
+            "寿司と九谷焼で歩く、金沢半日ルート",
+            "器も、街も、食も。石川らしさを外さない旅"
+          ],
+          "sample_voice": "金沢の街並み、食の美味しさ、九谷焼をはじめとする文化への好意が同時に語られている。"
+        },
+        {
+          "persona_id": "kutani_03_kutani_craft_authenticity_explorer",
+          "name_ja": "文化・工芸の文脈まで知りたい九谷焼探索者",
+          "nickname": "本物探しの北川さん",
+          "data_support": { "n": 54, "share_pct": 15.5, "confidence": "high" },
+          "synthetic_profile": {
+            "age_core": "50代33.3%、40代22.2%、30代16.7%",
+            "household_income": "500万円以上 600万円未満13.0%、300万円以上 400万円未満13.0%",
+            "source_region": "首都圏27.8%、北陸25.9%、関西16.7%",
+            "companion": "自分ひとり29.6%、夫婦2人25.9%、友人11.1%",
+            "main_area": "加賀エリア64.8%、金沢エリア31.5%",
+            "typical_facilities": ["石川県立歴史博物館", "九谷セラミック・ラボラトリー", "九谷陶芸村", "能美ふるさとミュージアム", "加賀伝統工芸村　ゆのくにの森"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 43000,
+            "facility_spend_median_yen": 2000,
+            "total_with_facility_median_yen": 46500,
+            "facility_nps_mean": 8.2,
+            "revisit_within_1year_pct": 70.4,
+            "top_purposes": { "名所、旧跡の観光": 35.2, "地元の美味しいものを食べる": 31.5, "まちあるき、都市散策": 29.6 },
+            "top_info_sources": { "インターネット・アプリ": 61.1, "観光パンフレット・ポスター": 14.8, "新聞・雑誌・ガイドブック": 14.8 },
+            "top_transport_to_ishikawa": { "自家用車": 50.0, "新幹線": 33.3, "在来線": 9.3 }
+          },
+          "orientation_scores_0_100": { "food": 23.8, "culture": 49.4, "craft": 30.0, "shopping": 9.1, "relax": 11.0, "mobility": 18.7, "family": 17.5, "premium": 17.7 },
+          "narrative": "九谷焼そのもの、または石川の工芸・美術・歴史を目的化しやすい層。九谷陶芸村、CERABO KUTANI、美術館などに反応し、単に商品を見るだけでなく、製法、歴史、作家、展示の意味を知りたい。ひとり旅や夫婦旅も多く、静かに深掘りできる展示・体験・回遊導線が刺さる。",
+          "psychology": [
+            "観光消費よりも、背景や文脈を理解することに価値を感じる",
+            "九谷焼を、山中漆器・加賀友禅・建築・歴史とつなげて理解したい",
+            "自分だけが見つけた深い魅力として、旅後に語れる発見を求める"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["九谷焼の歴史・技法・作家・産地を短時間で理解したい"],
+            "emotional": ["本物に触れたという充足感を得たい"],
+            "social": ["旅後に、単なる観光ではなく文化的な発見として語りたい"]
+          },
+          "pain_points": [
+            "九谷焼や加賀工芸の文化背景が、観光客向けに十分整理されていない",
+            "展示が良くても、購入や体験につながる導線が弱い"
+          ],
+          "message_hooks": [
+            "九谷焼を、見るだけで終わらせない旅",
+            "加賀の工芸をめぐる、小さな知的冒険"
+          ],
+          "sample_voice": "古九谷や九谷焼の歴史、作り方の説明、美しい展示物への感動が見られる。"
+        },
+        {
+          "persona_id": "kutani_04_smart_route_gateway_traveler",
+          "name_ja": "空港・駅・二次交通を使い分けるスマート周遊層",
+          "nickname": "ゲートウェイ設計者・村上さん",
+          "data_support": { "n": 32, "share_pct": 9.2, "confidence": "medium" },
+          "synthetic_profile": {
+            "age_core": "50代34.4%、40代18.8%、30代15.6%",
+            "household_income": "1,000万円以上 1,200万円未満25.0%、400万円以上 500万円未満9.4%",
+            "source_region": "首都圏46.9%、関西21.9%、中京12.5%",
+            "companion": "自分ひとり43.8%、夫婦2人15.6%",
+            "main_area": "加賀エリア71.9%、金沢エリア28.1%",
+            "typical_facilities": ["小松空港", "金沢駅", "和餐　伸", "小松市観光交流センター Komatsu九"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 58750,
+            "facility_spend_median_yen": 2000,
+            "total_with_facility_median_yen": 68250,
+            "facility_nps_mean": 8.2,
+            "revisit_within_1year_pct": 65.6,
+            "top_purposes": { "出張など仕事関係": 37.5, "地元の美味しいものを食べる": 37.5, "名所、旧跡の観光": 28.1 },
+            "top_info_sources": { "インターネット・アプリ": 53.1, "友人・知人": 25.0, "新聞・雑誌・ガイドブック": 18.8 },
+            "top_transport_to_ishikawa": { "飛行機": 56.2, "新幹線": 25.0, "在来線": 21.9 }
+          },
+          "orientation_scores_0_100": { "food": 30.9, "culture": 32.7, "craft": 23.0, "shopping": 6.5, "relax": 13.0, "mobility": 52.6, "family": 9.7, "premium": 18.7 },
+          "narrative": "小松空港、金沢駅、観光案内所など、旅の入口・出口で九谷焼や工芸に接触する層。飛行機・新幹線・バスを使い分け、限られた時間で効率よく回りたい。九谷焼は『時間があれば体験したい』『待ち時間に買いたい』『空港や駅で良いものに出会いたい』という形で現れる。",
+          "psychology": [
+            "時間価値が高く、移動の不確実性や待ち時間の空白を嫌う",
+            "空港・駅でも、石川らしい土産や工芸に触れられると満足度が上がる",
+            "目的地の魅力と同じくらい、接続・所要時間・品揃えを見ている"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["空港・駅・宿・九谷焼スポットを、無駄なくつなぎたい"],
+            "emotional": ["短い滞在でも、石川らしいものに触れた実感を持ちたい"],
+            "social": ["出張や短期滞在でも、気の利いた石川土産を持ち帰りたい"]
+          },
+          "pain_points": [
+            "空港・駅の飲食や土産の選択肢が少ないと感じやすい",
+            "観光情報と移動情報が分断されている"
+          ],
+          "message_hooks": [
+            "小松空港から始める、九谷焼ショートトリップ",
+            "待ち時間を、石川らしい工芸時間に変える"
+          ],
+          "sample_voice": "小松空港や金沢駅で、土産、工芸品、九谷焼体験への関心が語られている。"
+        },
+        {
+          "persona_id": "kutani_05_family_craft_learning_memory_maker",
+          "name_ja": "子どもと体験・学びを持ち帰るクラフト家族層",
+          "nickname": "親子体験編集者・田中さん",
+          "data_support": { "n": 31, "share_pct": 8.9, "confidence": "medium" },
+          "synthetic_profile": {
+            "age_core": "40代51.6%、50代16.1%、30代16.1%",
+            "household_income": "400万円以上 500万円未満19.4%、500万円以上 600万円未満16.1%",
+            "source_region": "北陸29.0%、関西22.6%、中京16.1%",
+            "companion": "小学生以下連れの家族61.3%、中学生以上連れの家族12.9%",
+            "main_area": "加賀エリア96.8%、金沢エリア3.2%",
+            "typical_facilities": ["いしかわ動物園", "トレインパーク白山", "加賀伝統工芸村　ゆのくにの森", "九谷陶芸村"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 34000,
+            "facility_spend_median_yen": 2000,
+            "total_with_facility_median_yen": 38500,
+            "facility_nps_mean": 8.7,
+            "revisit_within_1year_pct": 61.3,
+            "top_purposes": { "テーマパーク": 41.9, "地元の美味しいものを食べる": 35.5, "温泉や露天風呂": 35.5 },
+            "top_info_sources": { "インターネット・アプリ": 64.5, "新聞・雑誌・ガイドブック": 25.8 },
+            "top_transport_to_ishikawa": { "自家用車": 71.0, "新幹線": 9.7 }
+          },
+          "orientation_scores_0_100": { "food": 25.5, "culture": 21.2, "craft": 29.8, "shopping": 7.4, "relax": 31.4, "mobility": 14.6, "family": 61.2, "premium": 14.9 },
+          "narrative": "子どもが楽しめるか、親が疲れすぎないかを見ながら、九谷焼や工芸体験を旅の記憶にしたい家族層。遊び・学び・体験が同時に成立する場所に反応する。高級感よりも、子どもが飽きない、休憩しやすい、体験が成功することが価値になる。",
+          "psychology": [
+            "自分の満足よりも、子どもや同行家族の反応を重視する",
+            "九谷焼は、見るものより『作る・選ぶ・記念に残す』ものとして入りやすい",
+            "トイレ、ベビーカー、食事、休憩場所などの基本品質に敏感"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["子どもが楽しめる工芸体験と、親が休める施設を同時に選びたい"],
+            "emotional": ["九谷焼体験を、家族旅行の記憶として残したい"],
+            "social": ["家族旅行を企画した人として、良い選択だったと思われたい"]
+          },
+          "pain_points": [
+            "体験の対象年齢、所要時間、予約可否が分かりにくい",
+            "子ども向け体験と大人向け工芸情報が別々に発信されている"
+          ],
+          "message_hooks": [
+            "親子でつくる、旅の九谷焼",
+            "子どもの体験と大人の満足が両立する工芸旅"
+          ],
+          "sample_voice": "伝統工芸体験を子どもが喜んだ、九谷焼絵付け体験が満足だったという声が見られる。"
         }
-      },
-      "orientation_scores_0_100": {
-        "food": 56.4,
-        "culture": 23.6,
-        "relax": 28.3,
-        "premium": 19.4,
-        "mobility": 23.8,
-        "family": 34.9,
-        "social_contribution": 1.3
-      },
-      "narrative": "旅行の中心にあるのは、名所制覇ではなく『この土地でしか食べられないものを、ちゃんと良い状態で味わう』こと。高額消費そのものが目的ではなく、食・宿・接客・移動が破綻せず、同行者にも薦められる旅になるかを重視する。宿の料理、海鮮、能登牛、地元の蕎麦、朝食、土産の質が、旅全体の評価に直結する。",
-      "psychology": [
-        "食は観光の付属物ではなく、旅の記憶を決める中心的体験",
-        "高収入層だが、豪華さよりも『納得できる質』を重視",
-        "同行者を満足させたい意識が強く、失敗しない店・宿・ルートを探す",
-        "『地元らしさ』と『ちゃんとしている感じ』が両立すると強く推奨する"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "限られた滞在時間の中で、石川らしい食を外さず選びたい",
-          "宿・飲食店・土産・観光施設を、同行者の満足度が高い順に組み合わせたい"
-        ],
-        "emotional": [
-          "良いものを選べたという納得感を得たい",
-          "食を通じて、土地に触れた感覚を持ち帰りたい"
-        ],
-        "social": [
-          "家族や友人に『ここは良かった』と自信を持って薦めたい",
-          "同行者を喜ばせ、旅程を選んだ人としての面目を保ちたい"
-        ]
-      },
-      "pain_points": [
-        "朝早い・夜遅い時間に良い飲食選択肢が少ない",
-        "有名店・人気店の混雑や予約難",
-        "地元らしい食と観光客向け商品の違いが事前に見えにくい"
-      ],
-      "message_hooks": [
-        "地元の人が薦める、失敗しない一食",
-        "宿・温泉・食まで一体で味わう石川旅",
-        "能登牛、海鮮、加賀料理を旅程に合わせて選ぶ"
-      ],
-      "sample_voice": "食べ物が美味しい、文化の違いを感じられる、という声が複数見られる。宿では料理・温泉・部屋・接客が一体で評価されている。"
-    },
-    {
-      "persona_id": "persona_02_mobility_smart_high_value_traveler",
-      "name_ja": "移動ストレスを嫌う高効率周遊トラベラー",
-      "nickname": "スマート動線派・村上さん",
-      "archetype_id": "mobility_smart_high_value_traveler",
-      "data_support": {
-        "n": 83,
-        "share_pct": 35.3,
-        "confidence": "high"
-      },
-      "synthetic_profile": {
-        "age_core": "40〜50代中心。50代36.1%、40代30.1%",
-        "household_income": "1,500万円以上",
-        "source_region": "首都圏が60.2%と強い",
-        "companion": "家族・親族、一人旅、夫婦が混在",
-        "main_area": "金沢・加賀が中心。小松空港、金沢市内、能登方面への接続も含む",
-        "typical_facilities": [
-          "小松空港",
-          "のとじま水族館",
-          "石川県立図書館",
-          "金沢市内ホテル"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 85000,
-        "facility_spend_median_yen": 7500,
-        "total_with_facility_median_yen": 122500,
-        "facility_nps_mean": 8.6,
-        "revisit_within_1year_pct": 67.5,
-        "top_transport_to_ishikawa": {
-          "飛行機": 44.6,
-          "新幹線": 32.5,
-          "自家用車": 18.1
-        },
-        "top_transport_to_facility": {
-          "自家用車": 24.1,
-          "路線バス": 22.9,
-          "レンタカー": 21.7,
-          "徒歩": 13.3,
-          "タクシー": 13.3
-        },
-        "top_info_sources": {
-          "インターネット・アプリ": 80.7,
-          "友人・知人": 16.9,
-          "新聞・雑誌・ガイドブック": 13.3
-        }
-      },
-      "orientation_scores_0_100": {
-        "food": 18.6,
-        "culture": 17.7,
-        "relax": 20.2,
-        "premium": 17.6,
-        "mobility": 27.5,
-        "family": 27.6,
-        "social_contribution": 2.0
-      },
-      "narrative": "石川の魅力そのものには高い関心があるが、評価を左右するのは『移動が読めるか』『乗り換えが少ないか』『時間を無駄にしないか』。飛行機・新幹線・レンタカー・路線バスを使い分けるため、観光地の魅力だけでなく、空港・駅・ホテル・バス停・駐車場・タクシーの接続品質まで旅の体験として見ている。",
-      "psychology": [
-        "時間価値が高く、移動の不確実性を強く嫌う",
-        "観光地の魅力と同じくらい、予約・交通・混雑回避の情報を重視する",
-        "一人旅・出張兼観光・家族旅行など文脈が幅広い",
-        "『スムーズだった』ことが満足度を大きく押し上げる"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "空港・駅・宿・観光地を無駄なくつなぎたい",
-          "天候や混雑、バス本数に左右されず、予定通り回りたい"
-        ],
-        "emotional": [
-          "慣れない土地でも不安なく動きたい",
-          "段取りがうまくいったという達成感を得たい"
-        ],
-        "social": [
-          "同行者に移動の負担を感じさせず、スマートに案内したい",
-          "出張や短期滞在でも石川を楽しんだと言える経験を持ち帰りたい"
-        ]
-      },
-      "pain_points": [
-        "交通系ICやキャッシュレス対応への期待",
-        "空港・駅から目的地までの二次交通の分かりにくさ",
-        "バス・タクシー・レンタカーの選択肢比較が面倒",
-        "観光情報と移動情報が別々に存在している"
-      ],
-      "message_hooks": [
-        "小松空港から迷わない、上質石川ルート",
-        "移動時間まで美しく設計する旅",
-        "混雑を避けて、食・温泉・文化を効率よく巡る"
-      ],
-      "sample_voice": "空港から金沢駅まで乗り換えなしで移動できること、タクシードライバーの親切さ、交通系ICへの要望など、移動体験そのものへの言及が見られる。"
-    },
-    {
-      "persona_id": "persona_03_family_intergenerational_memory_maker",
-      "name_ja": "子ども・親世代と一緒に思い出を作る家族旅行者",
-      "nickname": "三世代思い出設計者・田中さん",
-      "archetype_id": "family_intergenerational_memory_maker",
-      "data_support": {
-        "n": 18,
-        "share_pct": 7.7,
-        "confidence": "medium"
-      },
-      "synthetic_profile": {
-        "age_core": "30〜50代が均等に厚い",
-        "household_income": "1,500万円以上",
-        "source_region": "北陸50.0%、首都圏27.8%",
-        "companion": "家族・親族77.8%",
-        "main_area": "加賀・能登中心。水族館、工芸村、昆虫館、子ども向け施設など",
-        "typical_facilities": [
-          "のとじま水族館",
-          "加賀伝統工芸村 ゆのくにの森",
-          "トレインパーク白山",
-          "ふれあい昆虫館"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 26250,
-        "facility_spend_median_yen": 7500,
-        "total_with_facility_median_yen": 46250,
-        "facility_nps_mean": 8.44,
-        "revisit_within_1year_pct": 61.1,
-        "top_purposes": {
-          "テーマパーク・動物園・博物館など": 72.2,
-          "温泉や露天風呂": 27.8,
-          "地元の美味しいものを食べる": 22.2
-        },
-        "top_transport": {
-          "自家用車": 77.8,
-          "レンタカー": 16.7
-        }
-      },
-      "orientation_scores_0_100": {
-        "food": 10.9,
-        "culture": 31.8,
-        "relax": 12.4,
-        "premium": 14.2,
-        "mobility": 18.0,
-        "family": 44.3,
-        "social_contribution": 1.1
-      },
-      "narrative": "本人だけでなく、子ども、親、祖父母など『一緒に来た人が楽しめるか』を重視する。高消費層ではあるが、このタイプにとっての価値は高級感よりも、年齢差のある同行者が無理なく過ごせること。子どもには体験や学び、親世代には歩きやすさや休憩しやすさ、家族全体には記憶に残る写真・食・会話が必要になる。",
-      "psychology": [
-        "自分の満足よりも、同行者の反応を重視する",
-        "子どもが飽きない、親が疲れない、全員が楽しめることが大切",
-        "施設の広さ・トイレ・休憩・授乳・おむつ替えなどの基本品質に敏感",
-        "復興や再開の物語にも感情移入しやすい"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "年齢差のある家族全員が楽しめる施設を選びたい",
-          "子ども向け体験、休憩、食事、トイレを含めて失敗しない一日を作りたい"
-        ],
-        "emotional": [
-          "子どもや親が喜ぶ姿を見て、自分も満たされたい",
-          "家族の記憶に残る旅行にしたい"
-        ],
-        "social": [
-          "家族旅行を企画した人として、良い選択だったと思われたい",
-          "子どもに地域の自然・文化・生き物への関心を持たせたい"
-        ]
-      },
-      "pain_points": [
-        "おむつ替え・授乳・ベビーカー・休憩場所の不足",
-        "施設が広すぎる/狭すぎるなど、子どもの年齢とのミスマッチ",
-        "家族向け情報が食・体験・移動に分散している"
-      ],
-      "message_hooks": [
-        "3歳でも楽しめる、親も疲れにくい石川旅",
-        "子どもの学びと大人の満足が両立する一日",
-        "水族館・工芸体験・温泉を家族の記憶にする"
-      ],
-      "sample_voice": "子どもが楽しめる、3歳児にちょうどよい、復活までの歴史に感動した、といった声が見られる。"
-    },
-    {
-      "persona_id": "persona_04_luxury_relaxation_onsen_stayer",
-      "name_ja": "宿で完結する上質な休息を求める温泉リトリート層",
-      "nickname": "静かな贅沢派・白石さん",
-      "archetype_id": "luxury_relaxation_onsen_stayer",
-      "data_support": {
-        "n": 17,
-        "share_pct": 7.2,
-        "confidence": "medium"
-      },
-      "synthetic_profile": {
-        "age_core": "50〜60代が中心。30〜40代も一定数",
-        "household_income": "1,500万円以上",
-        "source_region": "北陸・首都圏・関西圏が同程度",
-        "companion": "家族・夫婦・恋人・友人に分散",
-        "main_area": "加賀エリア76.5%。温泉宿・加賀観光との相性が高い",
-        "typical_facilities": [
-          "たちばな四季亭",
-          "ゆのくに天祥",
-          "加賀温泉エリア",
-          "金沢城公園周辺"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 105000,
-        "facility_spend_median_yen": 75000,
-        "total_with_facility_median_yen": 165500,
-        "facility_nps_mean": 8.82,
-        "revisit_within_1year_pct": 70.6,
-        "top_purposes": {
-          "温泉や露天風呂": 52.9,
-          "宿でのんびり過ごす": 35.3
-        },
-        "top_transport": {
-          "自家用車": 94.1
-        }
-      },
-      "orientation_scores_0_100": {
-        "food": 8.0,
-        "culture": 1.4,
-        "relax": 39.5,
-        "premium": 23.0,
-        "mobility": 15.0,
-        "family": 26.4,
-        "social_contribution": 0.6
-      },
-      "narrative": "観光スポットを大量に回るより、宿・温泉・食事・部屋・接客の中で旅を完結させたい層。高消費が最もはっきり出ており、施設消費中央値も高い。派手なラグジュアリーではなく、静けさ、清潔感、接客、部屋の居心地、温泉の質にお金を払う。旅行の成功は『疲れが取れたか』『大切に扱われたか』で決まる。",
-      "psychology": [
-        "休むこと自体に投資する",
-        "外に出歩くより、宿内体験の完成度を重視する",
-        "接客や空間の細部から、価格に見合うかを判断する",
-        "和風・地域性・体験性があると満足度が上がる"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "宿の中で食事・温泉・休息が完結する上質な滞在をしたい",
-          "移動や計画に追われず、安心して過ごせる宿を選びたい"
-        ],
-        "emotional": [
-          "日常から切り離され、静かに回復したい",
-          "丁寧に扱われている感覚を得たい"
-        ],
-        "social": [
-          "夫婦・家族・恋人に、良い宿を選んだと思ってもらいたい",
-          "大切な人との節目にふさわしい体験を残したい"
-        ]
-      },
-      "pain_points": [
-        "価格に対して接客・部屋・食事が期待を下回ること",
-        "宿周辺の過ごし方が分かりにくいこと",
-        "車前提の移動で、公共交通利用者には選択肢が弱いこと"
-      ],
-      "message_hooks": [
-        "観光しすぎない、何もしない贅沢",
-        "加賀で、部屋・湯・食にひたる一泊",
-        "大切な人と静かに過ごす上質温泉"
-      ],
-      "sample_voice": "温泉、食事、部屋、従業員の対応が素晴らしい、リラックスできる、といった宿泊体験全体への評価が目立つ。"
-    },
-    {
-      "persona_id": "persona_05_culture_craft_authenticity_explorer",
-      "name_ja": "文化・工芸・本物感を探す小規模探索者",
-      "nickname": "本物探しの編集者・北川さん",
-      "archetype_id": "culture_craft_authenticity_explorer",
-      "data_support": {
-        "n": 4,
-        "share_pct": 1.7,
-        "confidence": "low_exploratory"
-      },
-      "synthetic_profile": {
-        "age_core": "サンプルが少なく年代は分散",
-        "household_income": "1,500万円以上",
-        "source_region": "関西圏が半数。北陸・その他も含む",
-        "companion": "家族・一人旅・友人に分散",
-        "main_area": "加賀エリアに集中",
-        "typical_facilities": [
-          "トレインパーク白山",
-          "山中温泉総湯 菊の湯",
-          "変なホテル 小松駅前"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 57500,
-        "facility_spend_median_yen": 7500,
-        "total_with_facility_median_yen": 65000,
-        "facility_nps_mean": 7.75,
-        "revisit_within_1year_pct": 25.0,
-        "top_purposes": {
-          "名所・旧跡の観光": 50.0,
-          "宿でのんびり過ごす": 25.0,
-          "買い物・アウトレット": 25.0,
-          "まちあるき": 25.0
-        },
-        "top_info_sources": {
-          "観光パンフレット・ポスター": 50.0,
-          "Instagram": 50.0
-        }
-      },
-      "orientation_scores_0_100": {
-        "food": 0.0,
-        "culture": 42.0,
-        "relax": 10.0,
-        "premium": 11.8,
-        "mobility": 11.2,
-        "family": 25.2,
-        "social_contribution": 0.0
-      },
-      "narrative": "全体に占める比率は小さいが、文化・工芸・歴史・まち歩きへの感度が高い層。王道観光だけでなく、施設の背景、地域の物語、技術、暮らしの文脈を知りたい。食よりも『なぜここにあるのか』『何が本物なのか』に反応する。ただしサンプル数が少ないため、現時点では確定ペルソナではなく、仮説ペルソナとして扱うのが妥当。",
-      "psychology": [
-        "観光消費よりも、背景を知ることに価値を感じる",
-        "パンフレット・展示・案内文の質に反応しやすい",
-        "Instagramも使うが、映えだけではなく意味や由来を求める",
-        "子ども連れの場合は、学びと体験の両立を重視する"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "地域の歴史・工芸・文化を短時間で理解したい",
-          "体験や展示を通じて、土地の固有性を学びたい"
-        ],
-        "emotional": [
-          "本物に触れたという充足感を得たい",
-          "自分だけが見つけた深い魅力を感じたい"
-        ],
-        "social": [
-          "旅後に、単なる観光ではなく意味のある発見として語りたい",
-          "子どもや友人に、地域の文化を分かりやすく伝えたい"
-        ]
-      },
-      "pain_points": [
-        "展示や施設の背景説明が浅いと満足度が伸びにくい",
-        "体験の予約や所要時間が分かりにくい",
-        "子連れの場合、おむつ替え等の基本設備不足が評価を下げる"
-      ],
-      "message_hooks": [
-        "旅先で、石川の手ざわりを知る",
-        "見るだけで終わらない、意味まで持ち帰る工芸体験",
-        "親子で学べる加賀の文化散歩"
-      ],
-      "sample_voice": "子どもが楽しめる、ソフトクリームが良かった、おむつ替え場所が少ないなど、体験価値と基本設備の両方への反応が見られる。"
-    },
-    {
-      "persona_id": "persona_06_recovery_support_respectful_visitor",
-      "name_ja": "復興・応援の気持ちを持つ敬意ある訪問者",
-      "nickname": "応援する旅人・森さん",
-      "archetype_id": "recovery_support_respectful_visitor",
-      "data_support": {
-        "n": 3,
-        "share_pct": 1.3,
-        "confidence": "low_exploratory"
-      },
-      "synthetic_profile": {
-        "age_core": "10代・50代・60代に分散。サンプル少",
-        "household_income": "1,500万円以上",
-        "source_region": "首都圏100%",
-        "companion": "一人旅・家族・夫婦に分散",
-        "main_area": "能登エリア中心。金沢を経由する場合もある",
-        "typical_facilities": [
-          "金沢駅",
-          "のとじま水族館",
-          "コスモアイル羽咋"
-        ]
-      },
-      "data_points": {
-        "trip_total_spend_median_yen": 75000,
-        "facility_spend_median_yen": 7500,
-        "total_with_facility_median_yen": 138500,
-        "facility_nps_mean": 9.67,
-        "revisit_within_1year_pct": 100.0,
-        "top_purposes": {
-          "災害ボランティア": 33.3,
-          "復興支援": 33.3,
-          "復興応援ツアー": 33.3
-        },
-        "top_area": {
-          "能登エリア": 66.7,
-          "金沢エリア": 33.3
-        }
-      },
-      "orientation_scores_0_100": {
-        "food": 12.0,
-        "culture": 0.0,
-        "relax": 4.0,
-        "premium": 15.6,
-        "mobility": 15.0,
-        "family": 30.0,
-        "social_contribution": 50.0
-      },
-      "narrative": "人数は少ないが、満足度・推奨度が非常に高い重要な兆し。観光だけでなく、応援、訪問、再開を見届ける、地域にお金を落とすといった意味を持って来訪している。消費は単なる購買ではなく、関係性や敬意の表現になる。情報発信では、過度に感動消費化せず、現地の現在・再開状況・受け入れ可能な応援方法を丁寧に伝える必要がある。",
-      "psychology": [
-        "観光者でありながら、地域への敬意や遠慮を持っている",
-        "再開や復活の物語に強く反応する",
-        "混雑や消費を押し付ける訴求より、静かな応援の導線を好む",
-        "訪れること自体に社会的意味を見出している"
-      ],
-      "jobs_to_be_done": {
-        "functional": [
-          "今行ってよい場所、応援になる消費、迷惑にならない訪問方法を知りたい",
-          "復興・再開した施設や地域を、無理のない形で訪れたい"
-        ],
-        "emotional": [
-          "少しでも役に立てたという実感を得たい",
-          "地域の現在を自分の目で見て、敬意を持って受け止めたい"
-        ],
-        "social": [
-          "周囲に、応援の形としての旅を伝えたい",
-          "地域との関係を一度きりではなく継続したい"
-        ]
-      },
-      "pain_points": [
-        "どこまで訪れてよいのか、どの行動が応援になるのか分かりにくい",
-        "復興情報と観光情報が分かれており、旅行計画に落とし込みにくい",
-        "感情的に消費しすぎる表現には違和感を持つ可能性がある"
-      ],
-      "message_hooks": [
-        "いま訪ねられる能登、いま応援になる消費",
-        "再開した場所を、静かに訪ねる旅",
-        "観光ではなく、関係をつくる訪問"
-      ],
-      "sample_voice": "復活したこと自体への喜び、静かな街であってほしい、程よさを評価する声が見られる。"
-    }
-  ]
-};
-
-    const labels = {
-      food: "食",
-      culture: "文化",
-      relax: "休息",
-      premium: "上質",
-      mobility: "移動",
-      family: "家族",
-      social_contribution: "応援"
+      ]
     };
 
+    // ----------------------------------------------------
+    // データセット定義：高収入高消費層
+    // ----------------------------------------------------
+    const DATA_HIGH_INCOME = {
+      "schema_version": "1.1",
+      "dataset": "柏川健観光アンケートデータMilli / highsalary_highconsume",
+      "segment": "世帯年収1,500万円以上かつ高消費層",
+      "personas": [
+        {
+          "persona_id": "persona_01_gourmet_local_taste_seeker",
+          "name_ja": "上質な土地の味を外したくない夫婦・家族トラベラー",
+          "nickname": "味覚編集者・佐伯さん",
+          "data_support": { "n": 110, "share_pct": 46.8, "confidence": "high" },
+          "synthetic_profile": {
+            "age_core": "40〜50代中心、特に50代が厚い",
+            "household_income": "1,500万円以上",
+            "source_region": "首都圏中心、北陸・関西・中京も一定数",
+            "companion": "家族・親族、夫婦が中心",
+            "main_area": "加賀・金沢・能登に広く分布",
+            "typical_facilities": ["のとじま水族館", "小松空港", "たちばな四季亭", "KOKOHOTEL Premier 金沢香林坊", "金沢駅"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 92500,
+            "facility_spend_median_yen": 7500,
+            "total_with_facility_median_yen": 115000,
+            "facility_nps_mean": 8.95,
+            "revisit_within_1year_pct": 70.0,
+            "top_purposes": { "地元の美味しいものを食べる": 96.4, "温泉や露天風呂": 46.4, "宿でのんびり過ごす": 45.5 },
+            "top_info_sources": { "インターネット・アプリ": 57.3, "Instagram": 23.6, "観光展・物産展": 20.0 },
+            "top_transport_to_ishikawa": { "新幹線": 40.0, "飛行機": 30.0 }
+          },
+          "orientation_scores_0_100": { "food": 56.4, "culture": 23.6, "craft": 15.0, "shopping": 12.0, "relax": 28.3, "premium": 19.4, "mobility": 23.8, "family": 34.9, "social_contribution": 1.3 },
+          "narrative": "旅行の中心にあるのは、名所制覇ではなく『この土地でしか食べられないものを、ちゃんと良い状態で味わう』こと。高額消費そのものが目的ではなく、食・宿・接客・移動が破綻せず、同行者にも薦められる旅になるかを重視する。宿の料理、海鮮、能登牛、地元の蕎麦、朝食、土産の質が、旅全体の評価に直結する。",
+          "psychology": [
+            "食は観光の付属物ではなく、旅の記憶を決める中心的体験",
+            "高収入層だが、豪華さよりも『納得できる質』を重視",
+            "同行者を満足させたい意識が強く、失敗しない店・宿・ルートを探す"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["限られた滞在時間の中で、石川らしい食を外さず選びたい"],
+            "emotional": ["良いものを選べたという納得感を得たい"],
+            "social": ["家族や友人に『ここは良かった』と自信を持って薦めたい"]
+          },
+          "pain_points": [
+            "朝早い・夜遅い時間に良い飲食選択肢が少ない",
+            "有名店・人気店の混雑や予約難",
+            "地元らしい食と観光客向け商品の違いが事前に見えにくい"
+          ],
+          "message_hooks": [
+            "地元の人が薦める、失敗しない一食",
+            "宿・温泉・食まで一体で味わう石川旅"
+          ],
+          "sample_voice": "食べ物が美味しい、文化の違いを感じられる、という声が複数見られる。"
+        },
+        {
+          "persona_id": "persona_02_mobility_smart_high_value_traveler",
+          "name_ja": "移動ストレスを嫌う高効率周遊トラベラー",
+          "nickname": "スマート動線派・村上さん",
+          "data_support": { "n": 83, "share_pct": 35.3, "confidence": "high" },
+          "synthetic_profile": {
+            "age_core": "40〜50代中心。50代36.1%、40代30.1%",
+            "household_income": "1,500万円以上",
+            "source_region": "首都圏が60.2%と強い",
+            "companion": "家族・親族、一人旅、夫婦が混在",
+            "main_area": "金沢・加賀が中心。",
+            "typical_facilities": ["小松空港", "のとじま水族館", "石川県立図書館", "金沢市内ホテル"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 85000,
+            "facility_spend_median_yen": 7500,
+            "total_with_facility_median_yen": 122500,
+            "facility_nps_mean": 8.6,
+            "revisit_within_1year_pct": 67.5,
+            "top_purposes": { "名所、旧跡の観光": 40.0, "地元の美味しいものを食べる": 35.0 },
+            "top_info_sources": { "インターネット・アプリ": 80.7, "友人・知人": 16.9 },
+            "top_transport_to_ishikawa": { "飛行機": 44.6, "新幹線": 32.5, "自家用車": 18.1 },
+            "top_transport_to_facility": { "自家用車": 24.1, "路線バス": 22.9, "レンタカー": 21.7 }
+          },
+          "orientation_scores_0_100": { "food": 18.6, "culture": 17.7, "craft": 10.0, "shopping": 8.0, "relax": 20.2, "premium": 17.6, "mobility": 27.5, "family": 27.6, "social_contribution": 2.0 },
+          "narrative": "石川の魅力そのものには高い関心があるが、評価を左右するのは『移動が読めるか』『乗り換えが少ないか』『時間を無駄にしないか』。飛行機・新幹線・レンタカー・路線バスを使い分けるため、空港・駅・ホテル・バス停・駐車場・タクシーの接続品質まで旅の体験として見ている。",
+          "psychology": [
+            "時間価値が高く、移動の不確実性を強く嫌う",
+            "観光地の魅力と同じくらい、予約・交通・混雑回避の情報を重視する",
+            "『スムーズだった』ことが満足度を大きく押し上げる"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["空港・駅・宿・観光地を無駄なくつなぎたい"],
+            "emotional": ["慣れない土地でも不安なく動きたい"],
+            "social": ["同行者に移動の負担を感じさせず、スマートに案内したい"]
+          },
+          "pain_points": [
+            "交通系ICやキャッシュレス対応への期待",
+            "空港・駅から目的地までの二次交通の分かりにくさ",
+            "バス・タクシー・レンタカーの選択肢比較が面倒"
+          ],
+          "message_hooks": [
+            "小松空港から迷わない、上質石川ルート",
+            "混雑を避けて、食・温泉・文化を効率よく巡る"
+          ],
+          "sample_voice": "空港から金沢駅まで乗り換えなしで移動できることなど、移動体験への言及が見られる。"
+        },
+        {
+          "persona_id": "persona_04_luxury_relaxation_onsen_stayer",
+          "name_ja": "宿で完結する上質な休息を求める温泉リトリート層",
+          "nickname": "静かな贅沢派・白石さん",
+          "data_support": { "n": 17, "share_pct": 7.2, "confidence": "medium" },
+          "synthetic_profile": {
+            "age_core": "50〜60代が中心。30〜40代も一定数",
+            "household_income": "1,500万円以上",
+            "source_region": "北陸・首都圏・関西圏が同程度",
+            "companion": "家族・夫婦・恋人・友人に分散",
+            "main_area": "加賀エリア76.5%。温泉宿・加賀観光との相性が高い",
+            "typical_facilities": ["たちばな四季亭", "ゆのくに天祥", "加賀温泉エリア", "金沢城公園周辺"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 105000,
+            "facility_spend_median_yen": 75000,
+            "total_with_facility_median_yen": 165500,
+            "facility_nps_mean": 8.82,
+            "revisit_within_1year_pct": 70.6,
+            "top_purposes": { "温泉や露天風呂": 52.9, "宿でのんびり過ごす": 35.3 },
+            "top_transport": { "自家用車": 94.1 }
+          },
+          "orientation_scores_0_100": { "food": 8.0, "culture": 1.4, "craft": 5.0, "shopping": 2.0, "relax": 39.5, "premium": 23.0, "mobility": 15.0, "family": 26.4, "social_contribution": 0.6 },
+          "narrative": "観光スポットを大量に回るより、宿・温泉・食事・部屋・接客の中で旅を完結させたい層。派手なラグジュアリーではなく、静けさ、清潔感、接客、部屋の居心地、温泉の質にお金を払う。旅行の成功は『疲れが取れたか』『大切に扱われたか』で決まる。",
+          "psychology": [
+            "休むこと自体に投資する",
+            "外に出歩くより、宿内体験の完成度を重視する",
+            "接客や空間の細部から、価格に見合うかを判断する"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["宿の中で食事・温泉・休息が完結する上質な滞在をしたい"],
+            "emotional": ["日常から切り離され、静かに回復したい"],
+            "social": ["大切な人との節目にふさわしい体験を残したい"]
+          },
+          "pain_points": [
+            "価格に対して接客・部屋・食事が期待を下回ること",
+            "宿周辺の過ごし方が分かりにくいこと"
+          ],
+          "message_hooks": [
+            "観光しすぎない、何もしない贅沢",
+            "大切な人と静かに過ごす上質温泉"
+          ],
+          "sample_voice": "温泉、食事、部屋、従業員の対応が素晴らしい、リラックスできる、といった宿泊体験全体への評価が目立つ。"
+        },
+        {
+          "persona_id": "persona_06_recovery_support_respectful_visitor",
+          "name_ja": "復興・応援の気持ちを持つ敬意ある訪問者",
+          "nickname": "応援する旅人・森さん",
+          "data_support": { "n": 3, "share_pct": 1.3, "confidence": "low_exploratory" },
+          "synthetic_profile": {
+            "age_core": "10代・50代・60代に分散",
+            "household_income": "1,500万円以上",
+            "source_region": "首都圏100%",
+            "companion": "一人旅・家族・夫婦に分散",
+            "main_area": "能登エリア中心。金沢を経由する場合もある",
+            "typical_facilities": ["金沢駅", "のとじま水族館", "コスモアイル羽咋"]
+          },
+          "data_points": {
+            "trip_total_spend_median_yen": 75000,
+            "facility_spend_median_yen": 7500,
+            "total_with_facility_median_yen": 138500,
+            "facility_nps_mean": 9.67,
+            "revisit_within_1year_pct": 100.0,
+            "top_purposes": { "災害ボランティア": 33.3, "復興支援": 33.3, "復興応援ツアー": 33.3 },
+            "top_area": { "能登エリア": 66.7, "金沢エリア": 33.3 }
+          },
+          "orientation_scores_0_100": { "food": 12.0, "culture": 0.0, "craft": 0.0, "shopping": 0.0, "relax": 4.0, "premium": 15.6, "mobility": 15.0, "family": 30.0, "social_contribution": 50.0 },
+          "narrative": "人数は少ないが、満足度・推奨度が非常に高い重要な兆し。観光だけでなく、応援、訪問、再開を見届ける、地域にお金を落とすといった意味を持って来訪している。消費は単なる購買ではなく、関係性や敬意の表現になる。現地の現在・再開状況・受け入れ可能な応援方法を丁寧に伝える必要がある。",
+          "psychology": [
+            "観光者でありながら、地域への敬意や遠慮を持っている",
+            "再開や復活の物語に強く反応する",
+            "混雑や消費を押し付ける訴求より、静かな応援の導線を好む"
+          ],
+          "jobs_to_be_done": {
+            "functional": ["今行ってよい場所、応援になる消費、迷惑にならない訪問方法を知りたい"],
+            "emotional": ["少しでも役に立てたという実感を得たい", "地域の現在を自分の目で見て、敬意を持って受け止めたい"],
+            "social": ["周囲に、応援の形としての旅を伝えたい", "地域との関係を一度きりではなく継続したい"]
+          },
+          "pain_points": [
+            "どこまで訪れてよいのか、どの行動が応援になるのか分かりにくい",
+            "感情的に消費しすぎる表現には違和感を持つ可能性がある"
+          ],
+          "message_hooks": [
+            "いま訪ねられる能登、いま応援になる消費",
+            "観光ではなく、関係をつくる訪問"
+          ],
+          "sample_voice": "復活したこと自体への喜び、静かな街であってほしい、程よさを評価する声が見られる。"
+        }
+      ]
+    };
+
+    // レーダーチャート用のラベル（両方の要素をカバーできるように統合）
+    const LABELS_KUTANI = {
+      food: "食", culture: "文化", craft: "工芸", shopping: "買物",
+      relax: "休息", mobility: "移動", family: "家族", premium: "上質"
+    };
+
+    const LABELS_HIGH_INCOME = {
+      food: "食", culture: "文化", relax: "休息", premium: "上質",
+      mobility: "移動", family: "家族", social_contribution: "応援", craft: "工芸"
+    };
+
+    // グローバルな状態管理
+    let currentDatasetId = 'kutani'; // 'kutani' | 'high_income'
+    let currentData = DATA_KUTANI;
+    let currentLabels = LABELS_KUTANI;
+
     const state = {
-      selectedId: DATA.personas[0].persona_id,
+      selectedId: currentData.personas[0].persona_id,
       insightMode: "psychology",
       jobMode: "functional",
       chat: []
@@ -1615,18 +1511,42 @@
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
     function activePersona() {
-      return DATA.personas.find(p => p.persona_id === state.selectedId) || DATA.personas[0];
+      return currentData.personas.find(p => p.persona_id === state.selectedId) || currentData.personas[0];
     }
 
     function confidenceClass(conf) {
+      if (!conf) return "";
       if (conf.includes("low")) return "low";
       if (conf.includes("medium")) return "medium";
       return "";
     }
 
+    // データセット切り替え処理
+    $('btnKutani').addEventListener('click', () => switchDataset('kutani'));
+    $('btnHighIncome').addEventListener('click', () => switchDataset('high_income'));
+
+    function switchDataset(id) {
+      currentDatasetId = id;
+      if (id === 'kutani') {
+        currentData = DATA_KUTANI;
+        currentLabels = LABELS_KUTANI;
+        $('btnKutani').className = 'btn';
+        $('btnHighIncome').className = 'btn secondary';
+      } else {
+        currentData = DATA_HIGH_INCOME;
+        currentLabels = LABELS_HIGH_INCOME;
+        $('btnHighIncome').className = 'btn';
+        $('btnKutani').className = 'btn secondary';
+      }
+      state.selectedId = currentData.personas[0].persona_id;
+      $('searchInput').value = '';
+      resetChat();
+      renderAll();
+    }
+
     function renderList() {
       const q = $("searchInput").value.trim().toLowerCase();
-      const filtered = DATA.personas.filter(p => {
+      const filtered = currentData.personas.filter(p => {
         const hay = JSON.stringify(p).toLowerCase();
         return !q || hay.includes(q);
       });
@@ -1643,7 +1563,7 @@
           <div class="mini-meta">
             <div><b>${p.data_support.n}</b><span>n</span></div>
             <div><b>${p.data_support.share_pct}%</b><span>share</span></div>
-            <div><b>${p.data_points.facility_nps_mean}</b><span>NPS mean</span></div>
+            <div><b>${p.data_points.facility_nps_mean || '-'}</b><span>NPS mean</span></div>
           </div>
         </button>
       `).join("") || `<div class="empty">該当するペルソナがありません。</div>`;
@@ -1659,7 +1579,7 @@
 
     function renderHeader(p) {
       const badge = $("confidenceBadge");
-      badge.textContent = p.data_support.confidence;
+      badge.textContent = p.data_support.confidence || "UNKNOWN";
       badge.className = `badge ${confidenceClass(p.data_support.confidence)}`;
 
       $("personaName").textContent = p.name_ja;
@@ -1671,11 +1591,11 @@
 
       const d = p.data_points;
       const kpis = [
-        ["旅行総消費中央値", yen(d.trip_total_spend_median_yen)],
-        ["施設消費中央値", yen(d.facility_spend_median_yen)],
-        ["合計消費中央値", yen(d.total_with_facility_median_yen)],
-        ["施設NPS平均", d.facility_nps_mean],
-        ["1年以内再訪意向", pct(d.revisit_within_1year_pct)]
+        ["旅行総消費中央値", d.trip_total_spend_median_yen ? yen(d.trip_total_spend_median_yen) : "-"],
+        ["施設消費中央値", d.facility_spend_median_yen ? yen(d.facility_spend_median_yen) : "-"],
+        ["合計消費中央値", d.total_with_facility_median_yen ? yen(d.total_with_facility_median_yen) : "-"],
+        ["施設NPS平均", d.facility_nps_mean || "-"],
+        ["1年以内再訪意向", d.revisit_within_1year_pct ? pct(d.revisit_within_1year_pct) : "-"]
       ];
       $("kpiGrid").innerHTML = kpis.map(([label, value]) => `
         <div class="kpi"><span>${esc(label)}</span><b>${esc(value)}</b></div>
@@ -1689,7 +1609,7 @@
       const H = canvas.height;
       ctx.clearRect(0, 0, W, H);
 
-      const keys = Object.keys(labels);
+      const keys = Object.keys(currentLabels);
       const cx = W / 2;
       const cy = H / 2 + 8;
       const maxR = Math.min(W, H) * .34;
@@ -1728,15 +1648,17 @@
         const ly = cy + Math.sin(a) * (maxR + 28);
         ctx.fillStyle = "#172033";
         ctx.font = "700 14px -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.fillText(labels[key], lx, ly);
+        ctx.fillText(currentLabels[key], lx, ly);
         ctx.fillStyle = "#6b7280";
         ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.fillText(Number(p.orientation_scores_0_100[key]).toFixed(1), lx, ly + 17);
+        const score = p.orientation_scores_0_100[key] || 0;
+        ctx.fillText(Number(score).toFixed(1), lx, ly + 17);
       });
 
       const points = keys.map((key, i) => {
         const a = -Math.PI / 2 + i * 2 * Math.PI / keys.length;
-        const r = maxR * (p.orientation_scores_0_100[key] / 100);
+        const score = p.orientation_scores_0_100[key] || 0;
+        const r = maxR * (score / 100);
         return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
       });
 
@@ -1866,9 +1788,9 @@
     }
 
     function renderFacilities(p) {
-      $("facilityTags").innerHTML = p.synthetic_profile.typical_facilities
+      $("facilityTags").innerHTML = (p.synthetic_profile.typical_facilities || [])
         .map(x => `<span class="tag">${esc(x)}</span>`).join("");
-      $("sampleVoice").textContent = p.sample_voice;
+      $("sampleVoice").textContent = p.sample_voice || "（サンプルボイスは登録されていません）";
     }
 
     function addMessage(role, text) {
@@ -1894,14 +1816,14 @@
 
       const p = activePersona();
       $("chatTitle").textContent = `${p.nickname} と話す`;
-      const quicks = [
-        "何に反応しますか？",
-        "消費を増やすには？",
-        "不満点は？",
-        "情報源は？",
-        "JOBを教えて",
-        "おすすめ訴求は？"
-      ];
+      
+      let quicks = [];
+      if (currentDatasetId === 'kutani') {
+        quicks = ["九谷焼にどう反応しますか？", "器を買いたくなる導線は？", "不満点は？", "情報源は？", "JOBを教えて", "おすすめ訴求は？"];
+      } else {
+        quicks = ["何に反応しますか？", "消費を増やすには？", "不満点は？", "情報源は？", "JOBを教えて", "おすすめ訴求は？"];
+      }
+      
       $("quickQuestions").innerHTML = quicks.map(q => `<button class="quick" data-q="${esc(q)}">${esc(q)}</button>`).join("");
       document.querySelectorAll(".quick").forEach(btn => {
         btn.addEventListener("click", () => ask(btn.dataset.q));
@@ -1909,13 +1831,14 @@
     }
 
     function summarizeCore(p) {
-      const s = p.orientation_scores_0_100;
-      const top = Object.entries(s).sort((a,b) => b[1] - a[1]).slice(0,2).map(([k]) => labels[k]).join("と");
-      return `${top}への感度が高く、${p.jobs_to_be_done.emotional[0]}と思っています。`;
+      const s = p.orientation_scores_0_100 || {};
+      const top = Object.entries(s).sort((a,b) => b[1] - a[1]).slice(0,2).map(([k]) => currentLabels[k] || k).join("と");
+      const emotionalJob = p.jobs_to_be_done?.emotional?.[0] || "満足いく旅がしたい";
+      return `${top}への感度が高く、${emotionalJob}と思っています。`;
     }
 
     function pickLines(arr, n=3) {
-      return arr.slice(0, n).map(x => `・${x}`).join("\n");
+      return (arr || []).slice(0, n).map(x => `・${x}`).join("\n");
     }
 
     function objectLines(obj, n=5) {
@@ -1932,7 +1855,8 @@
       }
 
       if (/(消費|単価|お金|高消費|増やす|売上|買う|購入)/.test(text)) {
-        return `消費を増やすなら、単に高い商品を出すより「納得できる理由」を見せてほしいです。\n\n私の消費中央値は、旅行総消費が${yen(d.trip_total_spend_median_yen)}、施設消費が${yen(d.facility_spend_median_yen)}、合計では${yen(d.total_with_facility_median_yen)}です。\n\n効く打ち手はこのあたりです。\n${pickLines(p.message_hooks, 3)}\n\nつまり、価格ではなく「なぜそれを選ぶべきか」が見えると財布が開きやすいです。`;
+        const spend = d.trip_total_spend_median_yen ? yen(d.trip_total_spend_median_yen) : "データなし";
+        return `消費を増やすなら、単に高い商品を出すより「納得できる理由」を見せてほしいです。\n\n私の旅行総消費中央値は${spend}です。\n\n効く打ち手はこのあたりです。\n${pickLines(p.message_hooks, 3)}\n\nつまり、価格ではなく「なぜそれを選ぶべきか」が見えると財布が開きやすいです。`;
       }
 
       if (/(不満|課題|痛点|困る|改善|ストレス|ペイン)/.test(text)) {
@@ -1971,6 +1895,14 @@
         return `同行者はかなり大事です。私の同行者像は「${p.synthetic_profile.companion}」。\n\n心理としては、\n${pickLines(p.psychology, 4)}\n\n自分だけが満足するより、同行者が「来てよかった」と言える設計に反応します。`;
       }
 
+      if (/(九谷|九谷焼|器|うつわ|陶芸|絵付|工芸|焼き物|陶器|作家|古九谷|セラボ|CERABO)/.test(text)) {
+        return `九谷焼や工芸品については、私にとって単なる土産ではなく「石川らしさを持ち帰る手ざわり」です。\n\n関連する心理は、\n${pickLines(p.psychology, 4)}\n\n施策としては、作品の背景、使い方、購入できる場所、体験の所要時間、周辺の食・温泉との組み合わせまで見えると反応しやすいです。`;
+      }
+
+      if (/(土産|お土産|買い物|購入|買う|ショップ|売店|品揃え|限定|記念|ギフト|贈る)/.test(text)) {
+        return `買い物や土産では、「どこでも買えるもの」より、旅の記憶や相手に渡す理由があるものに反応します。\n\n私の痛点は、\n${pickLines(p.pain_points, 4)}\n\n効く訴求は、\n${pickLines(p.message_hooks, 3)}\n\n価格帯、用途、持ち帰りやすさ、限定性が整理されていると選びやすいです。`;
+      }
+
       if (/(文化|工芸|歴史|本物|まち歩き|展示)/.test(text)) {
         return `文化・工芸・歴史に関しては、ただ見るだけではなく、背景や意味が伝わることが重要です。\n\n関連する心理は、\n${pickLines(p.psychology, 4)}\n\n展示文、パンフレット、スタッフの説明、体験の所要時間などが整うと「意味まで持ち帰る旅」になります。`;
       }
@@ -1988,10 +1920,12 @@
       }
 
       if (/(施設|どこ|場所|典型|おすすめ)/.test(text)) {
-        return `このペルソナと接点がある典型施設は、\n${p.synthetic_profile.typical_facilities.map(x => `・${x}`).join("\n")}\n\n主なエリアは「${p.synthetic_profile.main_area}」です。`;
+        return `このペルソナと接点がある典型施設は、\n${(p.synthetic_profile.typical_facilities || []).map(x => `・${x}`).join("\n")}\n\n主なエリアは「${p.synthetic_profile.main_area}」です。`;
       }
 
-      return `その質問に対して、私の立場から答えると、重要なのは「${p.jobs_to_be_done.emotional[0]}」です。\n\n判断材料としては、\n${pickLines(p.psychology, 3)}\n\n具体的には、${p.message_hooks[0]}のように、旅の失敗を減らし、納得できる選択ができる情報に反応します。`;
+      const emotionalJob = p.jobs_to_be_done?.emotional?.[0] || "自分の満足いく旅";
+      const messageHook = p.message_hooks?.[0] || "魅力的な体験";
+      return `その質問に対して、私の立場から答えると、重要なのは「${emotionalJob}」です。\n\n判断材料としては、\n${pickLines(p.psychology, 3)}\n\n具体的には、${messageHook}のように、旅の失敗を減らし、納得できる選択ができる情報に反応します。`;
     }
 
     function ask(q) {
@@ -2074,6 +2008,7 @@ ${JSON.stringify(p.data_points, null, 2)}
       }
     });
 
+    // 初期化
     resetChat();
     renderAll();
     window.addEventListener("resize", () => drawRadar(activePersona()));
