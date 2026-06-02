@@ -1,0 +1,1796 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Milli 高収入高消費層ペルソナ・チャット可視化</title>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --paper: rgba(255,255,255,.82);
+      --paper-solid: #fffdf8;
+      --ink: #172033;
+      --muted: #6b7280;
+      --line: rgba(23,32,51,.12);
+      --accent: #9b5f2e;
+      --accent2: #1f6f78;
+      --accent3: #b8844a;
+      --danger: #8f3a30;
+      --shadow: 0 24px 80px rgba(23,32,51,.12);
+      --radius: 24px;
+      --radius-sm: 16px;
+      --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "YuGothic", "Noto Sans JP", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(31,111,120,.20), transparent 28rem),
+        radial-gradient(circle at top right, rgba(184,132,74,.22), transparent 24rem),
+        linear-gradient(135deg, #f7f1e5 0%, #f1efe9 55%, #e8eef0 100%);
+      font-family: var(--font-sans);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .36;
+      background-image:
+        linear-gradient(rgba(23,32,51,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23,32,51,.045) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+      z-index: -1;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    .app {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      background:
+        linear-gradient(135deg, rgba(255,253,248,.92), rgba(255,253,248,.70)),
+        radial-gradient(circle at 88% 18%, rgba(155,95,46,.20), transparent 28rem);
+      box-shadow: var(--shadow);
+      padding: clamp(28px, 5vw, 64px);
+      margin-bottom: 24px;
+    }
+
+    .hero::after {
+      content: "Milli";
+      position: absolute;
+      right: clamp(24px, 5vw, 72px);
+      bottom: -42px;
+      font-family: var(--font-serif);
+      font-size: clamp(72px, 13vw, 180px);
+      color: rgba(23,32,51,.055);
+      line-height: 1;
+      letter-spacing: -.06em;
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border: 1px solid rgba(155,95,46,.26);
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .04em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(155,95,46,.14);
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 5vw, 64px);
+      letter-spacing: -.06em;
+      line-height: 1.08;
+      margin: 18px 0 18px;
+      max-width: 920px;
+    }
+
+    .hero p {
+      max-width: 880px;
+      color: #4b5563;
+      margin: 0;
+      font-size: clamp(15px, 1.6vw, 18px);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .search-wrap {
+      flex: 1 1 320px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.74);
+      backdrop-filter: blur(12px);
+    }
+
+    .search-wrap span { color: var(--muted); }
+    .search-wrap input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: var(--ink);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      box-shadow: 0 10px 28px rgba(23,32,51,.14);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(23,32,51,.18); }
+    .btn.secondary {
+      background: rgba(255,255,255,.75);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 60px rgba(23,32,51,.08);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      padding: 16px;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+    }
+
+    .sidebar h2, .section-title {
+      font-family: var(--font-serif);
+      letter-spacing: -.04em;
+      line-height: 1.2;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin: 8px 8px 14px;
+    }
+
+    .persona-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .persona-card {
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+      background: rgba(255,255,255,.66);
+      transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+      color: inherit;
+    }
+    .persona-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(155,95,46,.34);
+      box-shadow: 0 10px 30px rgba(23,32,51,.08);
+    }
+    .persona-card.active {
+      background: linear-gradient(135deg, rgba(155,95,46,.14), rgba(31,111,120,.10)), #fff;
+      border-color: rgba(155,95,46,.48);
+      box-shadow: 0 16px 44px rgba(155,95,46,.13);
+    }
+
+    .persona-card .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .persona-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .persona-card small {
+      display: block;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: .04em;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(31,111,120,.10);
+      color: var(--accent2);
+      border: 1px solid rgba(31,111,120,.18);
+    }
+    .badge.low { background: rgba(143,58,48,.08); color: var(--danger); border-color: rgba(143,58,48,.18); }
+    .badge.medium { background: rgba(184,132,74,.12); color: #80612d; border-color: rgba(184,132,74,.22); }
+
+    .mini-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .mini-meta div {
+      border-radius: 12px;
+      background: rgba(255,255,255,.72);
+      padding: 8px;
+      text-align: center;
+      border: 1px solid rgba(23,32,51,.08);
+    }
+    .mini-meta b { display: block; font-size: 14px; }
+    .mini-meta span { display: block; font-size: 10px; color: var(--muted); }
+
+    main {
+      display: grid;
+      gap: 24px;
+    }
+
+    .persona-head {
+      padding: clamp(20px, 4vw, 36px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .persona-head::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(31,111,120,.15), transparent 24rem),
+        radial-gradient(circle at 95% 0%, rgba(155,95,46,.20), transparent 22rem);
+      pointer-events: none;
+    }
+
+    .persona-head > * { position: relative; }
+
+    .persona-head-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .persona-title {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: clamp(28px, 4vw, 48px);
+      letter-spacing: -.06em;
+      line-height: 1.14;
+    }
+    .nickname {
+      color: var(--accent);
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .narrative {
+      margin: 18px 0 0;
+      color: #374151;
+      max-width: 920px;
+    }
+
+    .confidence-box {
+      min-width: 170px;
+      border: 1px solid rgba(23,32,51,.10);
+      border-radius: 20px;
+      background: rgba(255,255,255,.66);
+      padding: 16px;
+    }
+    .confidence-box .num {
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -.06em;
+    }
+    .confidence-box .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .kpi {
+      border: 1px solid rgba(23,32,51,.10);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,.74);
+    }
+    .kpi span {
+      color: var(--muted);
+      font-size: 12px;
+      display: block;
+      line-height: 1.35;
+    }
+    .kpi b {
+      display: block;
+      margin-top: 6px;
+      font-size: clamp(18px, 2vw, 28px);
+      letter-spacing: -.04em;
+      line-height: 1.1;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(360px, .9fr) 1.1fr;
+      gap: 24px;
+    }
+
+    .card {
+      padding: clamp(18px, 3vw, 28px);
+    }
+
+    .section-title {
+      font-size: 24px;
+      margin: 0 0 16px;
+    }
+    .section-sub {
+      color: var(--muted);
+      margin: -8px 0 16px;
+      font-size: 14px;
+    }
+
+    .chart-wrap {
+      display: grid;
+      place-items: center;
+      padding: 10px 0 0;
+    }
+    canvas#radar {
+      width: min(100%, 520px);
+      height: auto;
+      max-height: 440px;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+    }
+    .bar-row {
+      display: grid;
+      gap: 6px;
+    }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      font-size: 14px;
+    }
+    .bar-label b { font-weight: 800; }
+    .bar-track {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(23,32,51,.08);
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      transition: width .45s ease;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .profile-item {
+      border: 1px solid rgba(23,32,51,.10);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,.58);
+    }
+    .profile-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .profile-item b {
+      display: block;
+      font-weight: 750;
+      line-height: 1.55;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(31,111,120,.09);
+      border: 1px solid rgba(31,111,120,.14);
+      color: #1d5960;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .quote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 0 10px 16px;
+      color: #374151;
+      background: linear-gradient(90deg, rgba(155,95,46,.08), transparent);
+      border-radius: 0 16px 16px 0;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.70);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .tab.active {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .list-block {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .list-block li {
+      position: relative;
+      padding: 12px 14px 12px 38px;
+      border: 1px solid rgba(23,32,51,.10);
+      border-radius: 16px;
+      background: rgba(255,255,255,.58);
+    }
+    .list-block li::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 22px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .chat-panel {
+      min-height: 640px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+    .chat-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.52);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+    .chat-head h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    .chat-head small {
+      display: block;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .chat-messages {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: auto;
+      max-height: 520px;
+      background:
+        linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)),
+        radial-gradient(circle at 10% 20%, rgba(31,111,120,.08), transparent 20rem);
+    }
+    .msg {
+      max-width: min(84%, 780px);
+      padding: 13px 15px;
+      border-radius: 18px;
+      border: 1px solid rgba(23,32,51,.08);
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      margin-left: auto;
+      background: var(--ink);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+    .msg.bot {
+      margin-right: auto;
+      background: rgba(255,255,255,.80);
+      border-bottom-left-radius: 6px;
+    }
+    .quick-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 22px 14px;
+      background: rgba(255,255,255,.52);
+    }
+    .quick {
+      border: 1px solid rgba(23,32,51,.12);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 750;
+    }
+    .chat-form {
+      display: flex;
+      gap: 10px;
+      padding: 16px;
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,.70);
+    }
+    .chat-form input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid rgba(23,32,51,.14);
+      border-radius: 999px;
+      padding: 12px 15px;
+      background: #fff;
+      outline: none;
+    }
+    .chat-form input:focus {
+      border-color: rgba(155,95,46,.55);
+      box-shadow: 0 0 0 4px rgba(155,95,46,.10);
+    }
+    .chat-form button {
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0 18px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 14px;
+    }
+
+    .empty {
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .drawer {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .layout, .grid-2 { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        max-height: none;
+      }
+      .persona-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .kpis {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app { width: min(100% - 20px, 1440px); padding-top: 10px; }
+      .hero { border-radius: 24px; padding: 24px; }
+      .toolbar { align-items: stretch; }
+      .toolbar .btn { width: 100%; }
+      .persona-list { grid-template-columns: 1fr; }
+      .persona-head-grid { grid-template-columns: 1fr; }
+      .confidence-box { min-width: 0; }
+      .kpis, .profile-grid { grid-template-columns: 1fr 1fr; }
+      .chat-head { align-items: flex-start; flex-direction: column; }
+      .msg { max-width: 94%; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      body::before, .toolbar, .sidebar, .chat-form, .quick-questions, .btn { display: none !important; }
+      .app { width: 100%; padding: 0; }
+      .hero, .panel { box-shadow: none; background: #fff; break-inside: avoid; }
+      .layout, .grid-2 { display: block; }
+      .panel { margin: 0 0 14px; }
+      .chat-panel { min-height: 0; }
+      .chat-messages { max-height: none; overflow: visible; }
+      canvas#radar { max-width: 420px; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="eyebrow">柏川健観光アンケートデータ Milli / highsalary_highconsume</div>
+      <h1>高収入・高消費層ペルソナを、選び、眺め、対話する。</h1>
+      <p>
+        世帯年収1,500万円以上かつ高消費層を、合成人格として可視化したプロトタイプです。
+        ペルソナカードを選ぶと、属性・消費・NPS・志向性スコア・JOB・訴求メッセージが切り替わり、
+        そのペルソナらしい簡易チャットができます。
+      </p>
+      <div class="toolbar">
+        <label class="search-wrap">
+          <span>検索</span>
+          <input id="searchInput" type="search" placeholder="例：食、移動、家族、温泉、復興、文化..." />
+        </label>
+        <button class="btn secondary" id="resetChatBtn">チャットをリセット</button>
+        <button class="btn" onclick="window.print()">印刷・PDF化</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel sidebar">
+        <h2>ペルソナを選択</h2>
+        <div id="personaList" class="persona-list"></div>
+        <p class="footer-note">
+          ※ nが小さいペルソナは exploratory として扱い、確定像ではなく仮説として読みます。
+        </p>
+      </aside>
+
+      <main>
+        <section class="panel persona-head">
+          <div class="persona-head-grid">
+            <div>
+              <div id="confidenceBadge" class="badge">HIGH</div>
+              <h2 id="personaName" class="persona-title"></h2>
+              <div id="personaNickname" class="nickname"></div>
+              <p id="personaNarrative" class="narrative"></p>
+            </div>
+            <div class="confidence-box">
+              <div id="supportN" class="num"></div>
+              <div id="supportShare" class="label"></div>
+              <div id="supportConfidence" class="label"></div>
+            </div>
+          </div>
+          <div id="kpiGrid" class="kpis"></div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel card">
+            <h2 class="section-title">志向性レーダー</h2>
+            <p class="section-sub">自由記述・目的・属性から作った 0〜100 の辞書スコア。</p>
+            <div class="chart-wrap">
+              <canvas id="radar" width="560" height="480" aria-label="orientation radar chart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel card">
+            <h2 class="section-title">上位目的・情報源・交通</h2>
+            <p class="section-sub">このペルソナの行動を左右する実務的な接点。</p>
+            <div id="dynamicBars" class="bar-list"></div>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel card">
+            <h2 class="section-title">合成人格プロフィール</h2>
+            <div id="profileGrid" class="profile-grid"></div>
+          </div>
+
+          <div class="panel card">
+            <h2 class="section-title">心理・痛点・訴求フック</h2>
+            <div class="tabs" id="insightTabs"></div>
+            <ul id="insightList" class="list-block"></ul>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="panel card">
+            <h2 class="section-title">Jobs To Be Done</h2>
+            <div class="tabs" id="jobTabs"></div>
+            <ul id="jobList" class="list-block"></ul>
+          </div>
+
+          <div class="panel card">
+            <h2 class="section-title">典型施設・サンプルボイス</h2>
+            <div id="facilityTags" class="tag-list"></div>
+            <div style="height:16px"></div>
+            <div id="sampleVoice" class="quote"></div>
+          </div>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="chat-head">
+            <div>
+              <h2 id="chatTitle">ペルソナチャット</h2>
+              <small>このチャットは埋め込みJSONから返す簡易ルールベースです。APIキー不要でそのまま動きます。</small>
+            </div>
+            <button class="btn secondary" id="copyPromptBtn">AI用プロンプトをコピー</button>
+          </div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="quick-questions" id="quickQuestions"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" placeholder="例：どんな情報発信に反応しますか？ 消費を増やすには？ 不満点は？" autocomplete="off" />
+            <button type="submit">送信</button>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const DATA = {
+  "schema_version": "1.1",
+  "dataset": "柏川健観光アンケートデータMilli / highsalary_highconsume",
+  "segment": "世帯年収1,500万円以上かつ高消費層",
+  "note": "各ペルソナは、回答者の支配的アーキタイプ、属性集計、消費中央値、NPS、自由記述の辞書スコアから作成した合成人格。nが小さいものは exploratory として扱う。",
+  "personas": [
+    {
+      "persona_id": "persona_01_gourmet_local_taste_seeker",
+      "name_ja": "上質な土地の味を外したくない夫婦・家族トラベラー",
+      "nickname": "味覚編集者・佐伯さん",
+      "archetype_id": "gourmet_local_taste_seeker",
+      "data_support": {
+        "n": 110,
+        "share_pct": 46.8,
+        "confidence": "high"
+      },
+      "synthetic_profile": {
+        "age_core": "40〜50代中心、特に50代が厚い",
+        "household_income": "1,500万円以上",
+        "source_region": "首都圏中心、北陸・関西・中京も一定数",
+        "companion": "家族・親族、夫婦が中心",
+        "main_area": "加賀・金沢・能登に広く分布。宿・空港・水族館・駅など接点が広い",
+        "typical_facilities": [
+          "のとじま水族館",
+          "小松空港",
+          "たちばな四季亭",
+          "KOKOHOTEL Premier 金沢香林坊",
+          "金沢駅"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 92500,
+        "facility_spend_median_yen": 7500,
+        "total_with_facility_median_yen": 115000,
+        "facility_nps_mean": 8.95,
+        "revisit_within_1year_pct": 70.0,
+        "top_purposes": {
+          "地元の美味しいものを食べる": 96.4,
+          "温泉や露天風呂": 46.4,
+          "宿でのんびり過ごす": 45.5,
+          "名所・旧跡": 34.5
+        },
+        "top_info_sources": {
+          "インターネット・アプリ": 57.3,
+          "Instagram": 23.6,
+          "観光展・物産展": 20.0,
+          "新聞・雑誌・ガイドブック": 19.1,
+          "友人・知人": 19.1
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 56.4,
+        "culture": 23.6,
+        "relax": 28.3,
+        "premium": 19.4,
+        "mobility": 23.8,
+        "family": 34.9,
+        "social_contribution": 1.3
+      },
+      "narrative": "旅行の中心にあるのは、名所制覇ではなく『この土地でしか食べられないものを、ちゃんと良い状態で味わう』こと。高額消費そのものが目的ではなく、食・宿・接客・移動が破綻せず、同行者にも薦められる旅になるかを重視する。宿の料理、海鮮、能登牛、地元の蕎麦、朝食、土産の質が、旅全体の評価に直結する。",
+      "psychology": [
+        "食は観光の付属物ではなく、旅の記憶を決める中心的体験",
+        "高収入層だが、豪華さよりも『納得できる質』を重視",
+        "同行者を満足させたい意識が強く、失敗しない店・宿・ルートを探す",
+        "『地元らしさ』と『ちゃんとしている感じ』が両立すると強く推奨する"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "限られた滞在時間の中で、石川らしい食を外さず選びたい",
+          "宿・飲食店・土産・観光施設を、同行者の満足度が高い順に組み合わせたい"
+        ],
+        "emotional": [
+          "良いものを選べたという納得感を得たい",
+          "食を通じて、土地に触れた感覚を持ち帰りたい"
+        ],
+        "social": [
+          "家族や友人に『ここは良かった』と自信を持って薦めたい",
+          "同行者を喜ばせ、旅程を選んだ人としての面目を保ちたい"
+        ]
+      },
+      "pain_points": [
+        "朝早い・夜遅い時間に良い飲食選択肢が少ない",
+        "有名店・人気店の混雑や予約難",
+        "地元らしい食と観光客向け商品の違いが事前に見えにくい"
+      ],
+      "message_hooks": [
+        "地元の人が薦める、失敗しない一食",
+        "宿・温泉・食まで一体で味わう石川旅",
+        "能登牛、海鮮、加賀料理を旅程に合わせて選ぶ"
+      ],
+      "sample_voice": "食べ物が美味しい、文化の違いを感じられる、という声が複数見られる。宿では料理・温泉・部屋・接客が一体で評価されている。"
+    },
+    {
+      "persona_id": "persona_02_mobility_smart_high_value_traveler",
+      "name_ja": "移動ストレスを嫌う高効率周遊トラベラー",
+      "nickname": "スマート動線派・村上さん",
+      "archetype_id": "mobility_smart_high_value_traveler",
+      "data_support": {
+        "n": 83,
+        "share_pct": 35.3,
+        "confidence": "high"
+      },
+      "synthetic_profile": {
+        "age_core": "40〜50代中心。50代36.1%、40代30.1%",
+        "household_income": "1,500万円以上",
+        "source_region": "首都圏が60.2%と強い",
+        "companion": "家族・親族、一人旅、夫婦が混在",
+        "main_area": "金沢・加賀が中心。小松空港、金沢市内、能登方面への接続も含む",
+        "typical_facilities": [
+          "小松空港",
+          "のとじま水族館",
+          "石川県立図書館",
+          "金沢市内ホテル"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 85000,
+        "facility_spend_median_yen": 7500,
+        "total_with_facility_median_yen": 122500,
+        "facility_nps_mean": 8.6,
+        "revisit_within_1year_pct": 67.5,
+        "top_transport_to_ishikawa": {
+          "飛行機": 44.6,
+          "新幹線": 32.5,
+          "自家用車": 18.1
+        },
+        "top_transport_to_facility": {
+          "自家用車": 24.1,
+          "路線バス": 22.9,
+          "レンタカー": 21.7,
+          "徒歩": 13.3,
+          "タクシー": 13.3
+        },
+        "top_info_sources": {
+          "インターネット・アプリ": 80.7,
+          "友人・知人": 16.9,
+          "新聞・雑誌・ガイドブック": 13.3
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 18.6,
+        "culture": 17.7,
+        "relax": 20.2,
+        "premium": 17.6,
+        "mobility": 27.5,
+        "family": 27.6,
+        "social_contribution": 2.0
+      },
+      "narrative": "石川の魅力そのものには高い関心があるが、評価を左右するのは『移動が読めるか』『乗り換えが少ないか』『時間を無駄にしないか』。飛行機・新幹線・レンタカー・路線バスを使い分けるため、観光地の魅力だけでなく、空港・駅・ホテル・バス停・駐車場・タクシーの接続品質まで旅の体験として見ている。",
+      "psychology": [
+        "時間価値が高く、移動の不確実性を強く嫌う",
+        "観光地の魅力と同じくらい、予約・交通・混雑回避の情報を重視する",
+        "一人旅・出張兼観光・家族旅行など文脈が幅広い",
+        "『スムーズだった』ことが満足度を大きく押し上げる"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "空港・駅・宿・観光地を無駄なくつなぎたい",
+          "天候や混雑、バス本数に左右されず、予定通り回りたい"
+        ],
+        "emotional": [
+          "慣れない土地でも不安なく動きたい",
+          "段取りがうまくいったという達成感を得たい"
+        ],
+        "social": [
+          "同行者に移動の負担を感じさせず、スマートに案内したい",
+          "出張や短期滞在でも石川を楽しんだと言える経験を持ち帰りたい"
+        ]
+      },
+      "pain_points": [
+        "交通系ICやキャッシュレス対応への期待",
+        "空港・駅から目的地までの二次交通の分かりにくさ",
+        "バス・タクシー・レンタカーの選択肢比較が面倒",
+        "観光情報と移動情報が別々に存在している"
+      ],
+      "message_hooks": [
+        "小松空港から迷わない、上質石川ルート",
+        "移動時間まで美しく設計する旅",
+        "混雑を避けて、食・温泉・文化を効率よく巡る"
+      ],
+      "sample_voice": "空港から金沢駅まで乗り換えなしで移動できること、タクシードライバーの親切さ、交通系ICへの要望など、移動体験そのものへの言及が見られる。"
+    },
+    {
+      "persona_id": "persona_03_family_intergenerational_memory_maker",
+      "name_ja": "子ども・親世代と一緒に思い出を作る家族旅行者",
+      "nickname": "三世代思い出設計者・田中さん",
+      "archetype_id": "family_intergenerational_memory_maker",
+      "data_support": {
+        "n": 18,
+        "share_pct": 7.7,
+        "confidence": "medium"
+      },
+      "synthetic_profile": {
+        "age_core": "30〜50代が均等に厚い",
+        "household_income": "1,500万円以上",
+        "source_region": "北陸50.0%、首都圏27.8%",
+        "companion": "家族・親族77.8%",
+        "main_area": "加賀・能登中心。水族館、工芸村、昆虫館、子ども向け施設など",
+        "typical_facilities": [
+          "のとじま水族館",
+          "加賀伝統工芸村 ゆのくにの森",
+          "トレインパーク白山",
+          "ふれあい昆虫館"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 26250,
+        "facility_spend_median_yen": 7500,
+        "total_with_facility_median_yen": 46250,
+        "facility_nps_mean": 8.44,
+        "revisit_within_1year_pct": 61.1,
+        "top_purposes": {
+          "テーマパーク・動物園・博物館など": 72.2,
+          "温泉や露天風呂": 27.8,
+          "地元の美味しいものを食べる": 22.2
+        },
+        "top_transport": {
+          "自家用車": 77.8,
+          "レンタカー": 16.7
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 10.9,
+        "culture": 31.8,
+        "relax": 12.4,
+        "premium": 14.2,
+        "mobility": 18.0,
+        "family": 44.3,
+        "social_contribution": 1.1
+      },
+      "narrative": "本人だけでなく、子ども、親、祖父母など『一緒に来た人が楽しめるか』を重視する。高消費層ではあるが、このタイプにとっての価値は高級感よりも、年齢差のある同行者が無理なく過ごせること。子どもには体験や学び、親世代には歩きやすさや休憩しやすさ、家族全体には記憶に残る写真・食・会話が必要になる。",
+      "psychology": [
+        "自分の満足よりも、同行者の反応を重視する",
+        "子どもが飽きない、親が疲れない、全員が楽しめることが大切",
+        "施設の広さ・トイレ・休憩・授乳・おむつ替えなどの基本品質に敏感",
+        "復興や再開の物語にも感情移入しやすい"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "年齢差のある家族全員が楽しめる施設を選びたい",
+          "子ども向け体験、休憩、食事、トイレを含めて失敗しない一日を作りたい"
+        ],
+        "emotional": [
+          "子どもや親が喜ぶ姿を見て、自分も満たされたい",
+          "家族の記憶に残る旅行にしたい"
+        ],
+        "social": [
+          "家族旅行を企画した人として、良い選択だったと思われたい",
+          "子どもに地域の自然・文化・生き物への関心を持たせたい"
+        ]
+      },
+      "pain_points": [
+        "おむつ替え・授乳・ベビーカー・休憩場所の不足",
+        "施設が広すぎる/狭すぎるなど、子どもの年齢とのミスマッチ",
+        "家族向け情報が食・体験・移動に分散している"
+      ],
+      "message_hooks": [
+        "3歳でも楽しめる、親も疲れにくい石川旅",
+        "子どもの学びと大人の満足が両立する一日",
+        "水族館・工芸体験・温泉を家族の記憶にする"
+      ],
+      "sample_voice": "子どもが楽しめる、3歳児にちょうどよい、復活までの歴史に感動した、といった声が見られる。"
+    },
+    {
+      "persona_id": "persona_04_luxury_relaxation_onsen_stayer",
+      "name_ja": "宿で完結する上質な休息を求める温泉リトリート層",
+      "nickname": "静かな贅沢派・白石さん",
+      "archetype_id": "luxury_relaxation_onsen_stayer",
+      "data_support": {
+        "n": 17,
+        "share_pct": 7.2,
+        "confidence": "medium"
+      },
+      "synthetic_profile": {
+        "age_core": "50〜60代が中心。30〜40代も一定数",
+        "household_income": "1,500万円以上",
+        "source_region": "北陸・首都圏・関西圏が同程度",
+        "companion": "家族・夫婦・恋人・友人に分散",
+        "main_area": "加賀エリア76.5%。温泉宿・加賀観光との相性が高い",
+        "typical_facilities": [
+          "たちばな四季亭",
+          "ゆのくに天祥",
+          "加賀温泉エリア",
+          "金沢城公園周辺"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 105000,
+        "facility_spend_median_yen": 75000,
+        "total_with_facility_median_yen": 165500,
+        "facility_nps_mean": 8.82,
+        "revisit_within_1year_pct": 70.6,
+        "top_purposes": {
+          "温泉や露天風呂": 52.9,
+          "宿でのんびり過ごす": 35.3
+        },
+        "top_transport": {
+          "自家用車": 94.1
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 8.0,
+        "culture": 1.4,
+        "relax": 39.5,
+        "premium": 23.0,
+        "mobility": 15.0,
+        "family": 26.4,
+        "social_contribution": 0.6
+      },
+      "narrative": "観光スポットを大量に回るより、宿・温泉・食事・部屋・接客の中で旅を完結させたい層。高消費が最もはっきり出ており、施設消費中央値も高い。派手なラグジュアリーではなく、静けさ、清潔感、接客、部屋の居心地、温泉の質にお金を払う。旅行の成功は『疲れが取れたか』『大切に扱われたか』で決まる。",
+      "psychology": [
+        "休むこと自体に投資する",
+        "外に出歩くより、宿内体験の完成度を重視する",
+        "接客や空間の細部から、価格に見合うかを判断する",
+        "和風・地域性・体験性があると満足度が上がる"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "宿の中で食事・温泉・休息が完結する上質な滞在をしたい",
+          "移動や計画に追われず、安心して過ごせる宿を選びたい"
+        ],
+        "emotional": [
+          "日常から切り離され、静かに回復したい",
+          "丁寧に扱われている感覚を得たい"
+        ],
+        "social": [
+          "夫婦・家族・恋人に、良い宿を選んだと思ってもらいたい",
+          "大切な人との節目にふさわしい体験を残したい"
+        ]
+      },
+      "pain_points": [
+        "価格に対して接客・部屋・食事が期待を下回ること",
+        "宿周辺の過ごし方が分かりにくいこと",
+        "車前提の移動で、公共交通利用者には選択肢が弱いこと"
+      ],
+      "message_hooks": [
+        "観光しすぎない、何もしない贅沢",
+        "加賀で、部屋・湯・食にひたる一泊",
+        "大切な人と静かに過ごす上質温泉"
+      ],
+      "sample_voice": "温泉、食事、部屋、従業員の対応が素晴らしい、リラックスできる、といった宿泊体験全体への評価が目立つ。"
+    },
+    {
+      "persona_id": "persona_05_culture_craft_authenticity_explorer",
+      "name_ja": "文化・工芸・本物感を探す小規模探索者",
+      "nickname": "本物探しの編集者・北川さん",
+      "archetype_id": "culture_craft_authenticity_explorer",
+      "data_support": {
+        "n": 4,
+        "share_pct": 1.7,
+        "confidence": "low_exploratory"
+      },
+      "synthetic_profile": {
+        "age_core": "サンプルが少なく年代は分散",
+        "household_income": "1,500万円以上",
+        "source_region": "関西圏が半数。北陸・その他も含む",
+        "companion": "家族・一人旅・友人に分散",
+        "main_area": "加賀エリアに集中",
+        "typical_facilities": [
+          "トレインパーク白山",
+          "山中温泉総湯 菊の湯",
+          "変なホテル 小松駅前"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 57500,
+        "facility_spend_median_yen": 7500,
+        "total_with_facility_median_yen": 65000,
+        "facility_nps_mean": 7.75,
+        "revisit_within_1year_pct": 25.0,
+        "top_purposes": {
+          "名所・旧跡の観光": 50.0,
+          "宿でのんびり過ごす": 25.0,
+          "買い物・アウトレット": 25.0,
+          "まちあるき": 25.0
+        },
+        "top_info_sources": {
+          "観光パンフレット・ポスター": 50.0,
+          "Instagram": 50.0
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 0.0,
+        "culture": 42.0,
+        "relax": 10.0,
+        "premium": 11.8,
+        "mobility": 11.2,
+        "family": 25.2,
+        "social_contribution": 0.0
+      },
+      "narrative": "全体に占める比率は小さいが、文化・工芸・歴史・まち歩きへの感度が高い層。王道観光だけでなく、施設の背景、地域の物語、技術、暮らしの文脈を知りたい。食よりも『なぜここにあるのか』『何が本物なのか』に反応する。ただしサンプル数が少ないため、現時点では確定ペルソナではなく、仮説ペルソナとして扱うのが妥当。",
+      "psychology": [
+        "観光消費よりも、背景を知ることに価値を感じる",
+        "パンフレット・展示・案内文の質に反応しやすい",
+        "Instagramも使うが、映えだけではなく意味や由来を求める",
+        "子ども連れの場合は、学びと体験の両立を重視する"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "地域の歴史・工芸・文化を短時間で理解したい",
+          "体験や展示を通じて、土地の固有性を学びたい"
+        ],
+        "emotional": [
+          "本物に触れたという充足感を得たい",
+          "自分だけが見つけた深い魅力を感じたい"
+        ],
+        "social": [
+          "旅後に、単なる観光ではなく意味のある発見として語りたい",
+          "子どもや友人に、地域の文化を分かりやすく伝えたい"
+        ]
+      },
+      "pain_points": [
+        "展示や施設の背景説明が浅いと満足度が伸びにくい",
+        "体験の予約や所要時間が分かりにくい",
+        "子連れの場合、おむつ替え等の基本設備不足が評価を下げる"
+      ],
+      "message_hooks": [
+        "旅先で、石川の手ざわりを知る",
+        "見るだけで終わらない、意味まで持ち帰る工芸体験",
+        "親子で学べる加賀の文化散歩"
+      ],
+      "sample_voice": "子どもが楽しめる、ソフトクリームが良かった、おむつ替え場所が少ないなど、体験価値と基本設備の両方への反応が見られる。"
+    },
+    {
+      "persona_id": "persona_06_recovery_support_respectful_visitor",
+      "name_ja": "復興・応援の気持ちを持つ敬意ある訪問者",
+      "nickname": "応援する旅人・森さん",
+      "archetype_id": "recovery_support_respectful_visitor",
+      "data_support": {
+        "n": 3,
+        "share_pct": 1.3,
+        "confidence": "low_exploratory"
+      },
+      "synthetic_profile": {
+        "age_core": "10代・50代・60代に分散。サンプル少",
+        "household_income": "1,500万円以上",
+        "source_region": "首都圏100%",
+        "companion": "一人旅・家族・夫婦に分散",
+        "main_area": "能登エリア中心。金沢を経由する場合もある",
+        "typical_facilities": [
+          "金沢駅",
+          "のとじま水族館",
+          "コスモアイル羽咋"
+        ]
+      },
+      "data_points": {
+        "trip_total_spend_median_yen": 75000,
+        "facility_spend_median_yen": 7500,
+        "total_with_facility_median_yen": 138500,
+        "facility_nps_mean": 9.67,
+        "revisit_within_1year_pct": 100.0,
+        "top_purposes": {
+          "災害ボランティア": 33.3,
+          "復興支援": 33.3,
+          "復興応援ツアー": 33.3
+        },
+        "top_area": {
+          "能登エリア": 66.7,
+          "金沢エリア": 33.3
+        }
+      },
+      "orientation_scores_0_100": {
+        "food": 12.0,
+        "culture": 0.0,
+        "relax": 4.0,
+        "premium": 15.6,
+        "mobility": 15.0,
+        "family": 30.0,
+        "social_contribution": 50.0
+      },
+      "narrative": "人数は少ないが、満足度・推奨度が非常に高い重要な兆し。観光だけでなく、応援、訪問、再開を見届ける、地域にお金を落とすといった意味を持って来訪している。消費は単なる購買ではなく、関係性や敬意の表現になる。情報発信では、過度に感動消費化せず、現地の現在・再開状況・受け入れ可能な応援方法を丁寧に伝える必要がある。",
+      "psychology": [
+        "観光者でありながら、地域への敬意や遠慮を持っている",
+        "再開や復活の物語に強く反応する",
+        "混雑や消費を押し付ける訴求より、静かな応援の導線を好む",
+        "訪れること自体に社会的意味を見出している"
+      ],
+      "jobs_to_be_done": {
+        "functional": [
+          "今行ってよい場所、応援になる消費、迷惑にならない訪問方法を知りたい",
+          "復興・再開した施設や地域を、無理のない形で訪れたい"
+        ],
+        "emotional": [
+          "少しでも役に立てたという実感を得たい",
+          "地域の現在を自分の目で見て、敬意を持って受け止めたい"
+        ],
+        "social": [
+          "周囲に、応援の形としての旅を伝えたい",
+          "地域との関係を一度きりではなく継続したい"
+        ]
+      },
+      "pain_points": [
+        "どこまで訪れてよいのか、どの行動が応援になるのか分かりにくい",
+        "復興情報と観光情報が分かれており、旅行計画に落とし込みにくい",
+        "感情的に消費しすぎる表現には違和感を持つ可能性がある"
+      ],
+      "message_hooks": [
+        "いま訪ねられる能登、いま応援になる消費",
+        "再開した場所を、静かに訪ねる旅",
+        "観光ではなく、関係をつくる訪問"
+      ],
+      "sample_voice": "復活したこと自体への喜び、静かな街であってほしい、程よさを評価する声が見られる。"
+    }
+  ]
+};
+
+    const labels = {
+      food: "食",
+      culture: "文化",
+      relax: "休息",
+      premium: "上質",
+      mobility: "移動",
+      family: "家族",
+      social_contribution: "応援"
+    };
+
+    const state = {
+      selectedId: DATA.personas[0].persona_id,
+      insightMode: "psychology",
+      jobMode: "functional",
+      chat: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const yen = (v) => new Intl.NumberFormat("ja-JP").format(v) + "円";
+    const pct = (v) => `${Number(v).toFixed(1)}%`;
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+
+    function activePersona() {
+      return DATA.personas.find(p => p.persona_id === state.selectedId) || DATA.personas[0];
+    }
+
+    function confidenceClass(conf) {
+      if (conf.includes("low")) return "low";
+      if (conf.includes("medium")) return "medium";
+      return "";
+    }
+
+    function renderList() {
+      const q = $("searchInput").value.trim().toLowerCase();
+      const filtered = DATA.personas.filter(p => {
+        const hay = JSON.stringify(p).toLowerCase();
+        return !q || hay.includes(q);
+      });
+
+      $("personaList").innerHTML = filtered.map(p => `
+        <button class="persona-card ${p.persona_id === state.selectedId ? "active" : ""}" data-id="${esc(p.persona_id)}">
+          <div class="top">
+            <div>
+              <strong>${esc(p.name_ja)}</strong>
+              <small>${esc(p.nickname)}</small>
+            </div>
+            <span class="badge ${confidenceClass(p.data_support.confidence)}">${esc(p.data_support.confidence)}</span>
+          </div>
+          <div class="mini-meta">
+            <div><b>${p.data_support.n}</b><span>n</span></div>
+            <div><b>${p.data_support.share_pct}%</b><span>share</span></div>
+            <div><b>${p.data_points.facility_nps_mean}</b><span>NPS mean</span></div>
+          </div>
+        </button>
+      `).join("") || `<div class="empty">該当するペルソナがありません。</div>`;
+
+      document.querySelectorAll(".persona-card").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedId = btn.dataset.id;
+          resetChat();
+          renderAll();
+        });
+      });
+    }
+
+    function renderHeader(p) {
+      const badge = $("confidenceBadge");
+      badge.textContent = p.data_support.confidence;
+      badge.className = `badge ${confidenceClass(p.data_support.confidence)}`;
+
+      $("personaName").textContent = p.name_ja;
+      $("personaNickname").textContent = p.nickname;
+      $("personaNarrative").textContent = p.narrative;
+      $("supportN").textContent = `n=${p.data_support.n}`;
+      $("supportShare").textContent = `構成比 ${p.data_support.share_pct}%`;
+      $("supportConfidence").textContent = `信頼度 ${p.data_support.confidence}`;
+
+      const d = p.data_points;
+      const kpis = [
+        ["旅行総消費中央値", yen(d.trip_total_spend_median_yen)],
+        ["施設消費中央値", yen(d.facility_spend_median_yen)],
+        ["合計消費中央値", yen(d.total_with_facility_median_yen)],
+        ["施設NPS平均", d.facility_nps_mean],
+        ["1年以内再訪意向", pct(d.revisit_within_1year_pct)]
+      ];
+      $("kpiGrid").innerHTML = kpis.map(([label, value]) => `
+        <div class="kpi"><span>${esc(label)}</span><b>${esc(value)}</b></div>
+      `).join("");
+    }
+
+    function drawRadar(p) {
+      const canvas = $("radar");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const keys = Object.keys(labels);
+      const cx = W / 2;
+      const cy = H / 2 + 8;
+      const maxR = Math.min(W, H) * .34;
+      const levels = 5;
+
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.font = "13px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let l = 1; l <= levels; l++) {
+        const r = maxR * l / levels;
+        ctx.beginPath();
+        keys.forEach((key, i) => {
+          const a = -Math.PI / 2 + i * 2 * Math.PI / keys.length;
+          const x = cx + Math.cos(a) * r;
+          const y = cy + Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = "rgba(23,32,51,.12)";
+        ctx.stroke();
+      }
+
+      keys.forEach((key, i) => {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / keys.length;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
+        ctx.strokeStyle = "rgba(23,32,51,.10)";
+        ctx.stroke();
+
+        const lx = cx + Math.cos(a) * (maxR + 36);
+        const ly = cy + Math.sin(a) * (maxR + 28);
+        ctx.fillStyle = "#172033";
+        ctx.font = "700 14px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(labels[key], lx, ly);
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText(Number(p.orientation_scores_0_100[key]).toFixed(1), lx, ly + 17);
+      });
+
+      const points = keys.map((key, i) => {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / keys.length;
+        const r = maxR * (p.orientation_scores_0_100[key] / 100);
+        return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+      });
+
+      const grad = ctx.createLinearGradient(cx - maxR, cy, cx + maxR, cy);
+      grad.addColorStop(0, "rgba(31,111,120,.30)");
+      grad.addColorStop(1, "rgba(184,132,74,.40)");
+
+      ctx.beginPath();
+      points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(155,95,46,.85)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      points.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#fffdf8";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(155,95,46,.95)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      ctx.restore();
+    }
+
+    function getBarGroups(p) {
+      const d = p.data_points;
+      const groups = [];
+      if (d.top_purposes) groups.push(["目的", d.top_purposes]);
+      if (d.top_info_sources) groups.push(["情報源", d.top_info_sources]);
+      if (d.top_transport_to_ishikawa) groups.push(["石川までの交通", d.top_transport_to_ishikawa]);
+      if (d.top_transport_to_facility) groups.push(["施設までの交通", d.top_transport_to_facility]);
+      if (d.top_transport) groups.push(["交通", d.top_transport]);
+      if (d.top_area) groups.push(["エリア", d.top_area]);
+      return groups;
+    }
+
+    function renderBars(p) {
+      const groups = getBarGroups(p);
+      $("dynamicBars").innerHTML = groups.map(([title, obj]) => {
+        const entries = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+        const max = Math.max(...entries.map(e => e[1]), 100);
+        return `
+          <div>
+            <h3 style="margin: 0 0 10px; font-size:16px">${esc(title)}</h3>
+            <div class="bar-list">
+              ${entries.map(([name, val]) => `
+                <div class="bar-row">
+                  <div class="bar-label"><b>${esc(name)}</b><span>${Number(val).toFixed(1)}%</span></div>
+                  <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, val / max * 100)}%"></div></div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join(`<div style="height:10px"></div>`);
+    }
+
+    function renderProfile(p) {
+      const prof = p.synthetic_profile;
+      const items = [
+        ["年代", prof.age_core],
+        ["世帯年収", prof.household_income],
+        ["発地", prof.source_region],
+        ["同行者", prof.companion],
+        ["主なエリア", prof.main_area]
+      ];
+      $("profileGrid").innerHTML = items.map(([k, v]) => `
+        <div class="profile-item"><span>${esc(k)}</span><b>${esc(v)}</b></div>
+      `).join("");
+    }
+
+    function renderInsightTabs(p) {
+      const tabs = [
+        ["psychology", "心理"],
+        ["pain_points", "痛点"],
+        ["message_hooks", "訴求"]
+      ];
+      $("insightTabs").innerHTML = tabs.map(([id, label]) =>
+        `<button class="tab ${state.insightMode === id ? "active" : ""}" data-tab="${id}">${label}</button>`
+      ).join("");
+      document.querySelectorAll("#insightTabs .tab").forEach(t => {
+        t.addEventListener("click", () => {
+          state.insightMode = t.dataset.tab;
+          renderInsights(activePersona());
+        });
+      });
+      renderInsights(p);
+    }
+
+    function renderInsights(p) {
+      const items = p[state.insightMode] || [];
+      $("insightList").innerHTML = items.map(x => `<li>${esc(x)}</li>`).join("");
+      document.querySelectorAll("#insightTabs .tab").forEach(t => {
+        t.classList.toggle("active", t.dataset.tab === state.insightMode);
+      });
+    }
+
+    function renderJobTabs(p) {
+      const tabs = [
+        ["functional", "機能的JOB"],
+        ["emotional", "情緒的JOB"],
+        ["social", "社会的JOB"]
+      ];
+      $("jobTabs").innerHTML = tabs.map(([id, label]) =>
+        `<button class="tab ${state.jobMode === id ? "active" : ""}" data-job="${id}">${label}</button>`
+      ).join("");
+      document.querySelectorAll("#jobTabs .tab").forEach(t => {
+        t.addEventListener("click", () => {
+          state.jobMode = t.dataset.job;
+          renderJobs(activePersona());
+        });
+      });
+      renderJobs(p);
+    }
+
+    function renderJobs(p) {
+      const items = p.jobs_to_be_done[state.jobMode] || [];
+      $("jobList").innerHTML = items.map(x => `<li>${esc(x)}</li>`).join("");
+      document.querySelectorAll("#jobTabs .tab").forEach(t => {
+        t.classList.toggle("active", t.dataset.job === state.jobMode);
+      });
+    }
+
+    function renderFacilities(p) {
+      $("facilityTags").innerHTML = p.synthetic_profile.typical_facilities
+        .map(x => `<span class="tag">${esc(x)}</span>`).join("");
+      $("sampleVoice").textContent = p.sample_voice;
+    }
+
+    function addMessage(role, text) {
+      state.chat.push({role, text});
+      renderChat();
+    }
+
+    function resetChat() {
+      const p = activePersona();
+      state.chat = [{
+        role: "bot",
+        text: `こんにちは。${p.nickname}です。\n私は「${p.name_ja}」というペルソナです。旅行では、${summarizeCore(p)}\n\n情報発信、消費拡大、痛点、JOB、施設改善などを聞いてください。`
+      }];
+      renderChat();
+    }
+
+    function renderChat() {
+      const box = $("chatMessages");
+      box.innerHTML = state.chat.map(m => `
+        <div class="msg ${m.role === "user" ? "user" : "bot"}">${esc(m.text)}</div>
+      `).join("");
+      box.scrollTop = box.scrollHeight;
+
+      const p = activePersona();
+      $("chatTitle").textContent = `${p.nickname} と話す`;
+      const quicks = [
+        "何に反応しますか？",
+        "消費を増やすには？",
+        "不満点は？",
+        "情報源は？",
+        "JOBを教えて",
+        "おすすめ訴求は？"
+      ];
+      $("quickQuestions").innerHTML = quicks.map(q => `<button class="quick" data-q="${esc(q)}">${esc(q)}</button>`).join("");
+      document.querySelectorAll(".quick").forEach(btn => {
+        btn.addEventListener("click", () => ask(btn.dataset.q));
+      });
+    }
+
+    function summarizeCore(p) {
+      const s = p.orientation_scores_0_100;
+      const top = Object.entries(s).sort((a,b) => b[1] - a[1]).slice(0,2).map(([k]) => labels[k]).join("と");
+      return `${top}への感度が高く、${p.jobs_to_be_done.emotional[0]}と思っています。`;
+    }
+
+    function pickLines(arr, n=3) {
+      return arr.slice(0, n).map(x => `・${x}`).join("\n");
+    }
+
+    function objectLines(obj, n=5) {
+      return Object.entries(obj || {}).sort((a,b) => b[1]-a[1]).slice(0,n)
+        .map(([k,v]) => `・${k}：${Number(v).toFixed(1)}%`).join("\n");
+    }
+
+    function answerFor(p, q) {
+      const text = q.toLowerCase();
+      const d = p.data_points;
+
+      if (/(自己紹介|あなた|どんな人|誰|概要)/.test(text)) {
+        return `私は${p.nickname}です。\n\n${p.narrative}\n\n属性としては、${p.synthetic_profile.age_core}で、同行者は「${p.synthetic_profile.companion}」が中心です。`;
+      }
+
+      if (/(消費|単価|お金|高消費|増やす|売上|買う|購入)/.test(text)) {
+        return `消費を増やすなら、単に高い商品を出すより「納得できる理由」を見せてほしいです。\n\n私の消費中央値は、旅行総消費が${yen(d.trip_total_spend_median_yen)}、施設消費が${yen(d.facility_spend_median_yen)}、合計では${yen(d.total_with_facility_median_yen)}です。\n\n効く打ち手はこのあたりです。\n${pickLines(p.message_hooks, 3)}\n\nつまり、価格ではなく「なぜそれを選ぶべきか」が見えると財布が開きやすいです。`;
+      }
+
+      if (/(不満|課題|痛点|困る|改善|ストレス|ペイン)/.test(text)) {
+        return `私がつまずきやすいのは、体験の価値そのものよりも、その前後の不安です。\n\n${pickLines(p.pain_points, 4)}\n\n改善するなら、施設単体ではなく「予約・移動・食事・休憩・買い物」まで一連の導線として整えると満足度が上がります。`;
+      }
+
+      if (/(情報|媒体|sns|instagram|インスタ|検索|知る|発信|広告)/.test(text)) {
+        const sources = d.top_info_sources ? objectLines(d.top_info_sources) : "このペルソナでは情報源データが限定的です。";
+        return `情報源としては、次の接点が重要です。\n\n${sources}\n\n発信では、きれいな写真だけでなく「誰に向いているか」「所要時間」「混雑回避」「予約」「失敗しない選び方」まで載っていると信頼しやすいです。`;
+      }
+
+      if (/(job|ジョブ|jtbd|機能|情緒|社会)/.test(text)) {
+        return `私のJOBは、こう整理できます。\n\n【機能的JOB】\n${pickLines(p.jobs_to_be_done.functional, 3)}\n\n【情緒的JOB】\n${pickLines(p.jobs_to_be_done.emotional, 3)}\n\n【社会的JOB】\n${pickLines(p.jobs_to_be_done.social, 3)}`;
+      }
+
+      if (/(訴求|コピー|メッセージ|響く|刺さる|フック|キャッチ)/.test(text)) {
+        return `響きやすいメッセージは、押し売りよりも「自分の旅がうまくいく予感」がある言葉です。\n\n${pickLines(p.message_hooks, 3)}\n\nこのペルソナには、抽象的な観光PRより、具体的な利用場面が見えるコピーが合います。`;
+      }
+
+      if (/(目的|なにをする|したい|旅行目的|体験)/.test(text)) {
+        return `旅行目的で強く出ているのは次の項目です。\n\n${objectLines(d.top_purposes || d.top_area || {}, 5)}\n\nただ、表面的な目的の奥には「${p.jobs_to_be_done.emotional[0]}」という感情があります。`;
+      }
+
+      if (/(移動|交通|空港|駅|レンタカー|バス|タクシー|車)/.test(text)) {
+        const transport = [
+          d.top_transport_to_ishikawa ? `【石川まで】\n${objectLines(d.top_transport_to_ishikawa)}` : "",
+          d.top_transport_to_facility ? `【施設まで】\n${objectLines(d.top_transport_to_facility)}` : "",
+          d.top_transport ? `【交通】\n${objectLines(d.top_transport)}` : ""
+        ].filter(Boolean).join("\n\n");
+        return transport
+          ? `移動は旅の満足度を左右します。\n\n${transport}\n\n私にとっては、観光地の魅力だけでなく、着くまでの迷わなさ、待ち時間の少なさ、同行者の疲れにくさも体験価値です。`
+          : `このペルソナでは交通の数値データは限定的ですが、移動の分かりやすさは安心感に直結します。`;
+      }
+
+      if (/(家族|子ども|親|夫婦|同行|三世代)/.test(text)) {
+        return `同行者はかなり大事です。私の同行者像は「${p.synthetic_profile.companion}」。\n\n心理としては、\n${pickLines(p.psychology, 4)}\n\n自分だけが満足するより、同行者が「来てよかった」と言える設計に反応します。`;
+      }
+
+      if (/(文化|工芸|歴史|本物|まち歩き|展示)/.test(text)) {
+        return `文化・工芸・歴史に関しては、ただ見るだけではなく、背景や意味が伝わることが重要です。\n\n関連する心理は、\n${pickLines(p.psychology, 4)}\n\n展示文、パンフレット、スタッフの説明、体験の所要時間などが整うと「意味まで持ち帰る旅」になります。`;
+      }
+
+      if (/(食|グルメ|料理|海鮮|能登牛|土産|朝食)/.test(text)) {
+        return `食は、旅の記憶を決める重要な接点です。\n\n目的データでは、\n${objectLines(d.top_purposes || {}, 5)}\n\n私には「地元らしさ」と「ちゃんとしている感じ」が両立していることが大切です。店名だけでなく、時間帯・予約可否・同行者向けかどうかまで分かると安心します。`;
+      }
+
+      if (/(温泉|宿|リラックス|休息|滞在|部屋)/.test(text)) {
+        return `宿や温泉は、単なる宿泊ではなく「回復する体験」です。\n\n心理としては、\n${pickLines(p.psychology, 4)}\n\n部屋・湯・食・接客・静けさが一体になっていると、価格への納得感が生まれます。`;
+      }
+
+      if (/(復興|応援|ボランティア|寄付|能登|再開)/.test(text)) {
+        return `応援や復興に関わる旅では、強い感動演出よりも、敬意ある情報がほしいです。\n\n${pickLines(p.jobs_to_be_done.functional, 2)}\n${pickLines(p.jobs_to_be_done.emotional, 2)}\n\n「いま訪れてよい場所」「応援になる消費」「迷惑にならない行動」が整理されていると動きやすいです。`;
+      }
+
+      if (/(施設|どこ|場所|典型|おすすめ)/.test(text)) {
+        return `このペルソナと接点がある典型施設は、\n${p.synthetic_profile.typical_facilities.map(x => `・${x}`).join("\n")}\n\n主なエリアは「${p.synthetic_profile.main_area}」です。`;
+      }
+
+      return `その質問に対して、私の立場から答えると、重要なのは「${p.jobs_to_be_done.emotional[0]}」です。\n\n判断材料としては、\n${pickLines(p.psychology, 3)}\n\n具体的には、${p.message_hooks[0]}のように、旅の失敗を減らし、納得できる選択ができる情報に反応します。`;
+    }
+
+    function ask(q) {
+      if (!q.trim()) return;
+      const p = activePersona();
+      addMessage("user", q.trim());
+      setTimeout(() => addMessage("bot", answerFor(p, q.trim())), 80);
+    }
+
+    function renderCopyPrompt(p) {
+      return `あなたは観光アンケートデータから作成されたペルソナです。以下のJSONに基づき、必ずこのペルソナの立場で一人称で回答してください。数値にないことは断定せず、仮説として答えてください。
+
+ペルソナ名: ${p.nickname}
+正式名称: ${p.name_ja}
+信頼度: ${p.data_support.confidence}
+n: ${p.data_support.n}
+構成比: ${p.data_support.share_pct}%
+
+ナラティブ:
+${p.narrative}
+
+心理:
+${p.psychology.map(x => "- " + x).join("\n")}
+
+JOB:
+機能的:
+${p.jobs_to_be_done.functional.map(x => "- " + x).join("\n")}
+情緒的:
+${p.jobs_to_be_done.emotional.map(x => "- " + x).join("\n")}
+社会的:
+${p.jobs_to_be_done.social.map(x => "- " + x).join("\n")}
+
+痛点:
+${p.pain_points.map(x => "- " + x).join("\n")}
+
+訴求フック:
+${p.message_hooks.map(x => "- " + x).join("\n")}
+
+データ:
+${JSON.stringify(p.data_points, null, 2)}
+
+回答ルール:
+- ペルソナの一人称で答える
+- 旅行者心理、消費、情報接点、施設改善の観点を入れる
+- データにないことは「仮説」と明示する
+- 観光施策に使える具体的な示唆で返す`;
+    }
+
+    function renderAll() {
+      const p = activePersona();
+      renderList();
+      renderHeader(p);
+      drawRadar(p);
+      renderBars(p);
+      renderProfile(p);
+      renderInsightTabs(p);
+      renderJobTabs(p);
+      renderFacilities(p);
+      renderChat();
+    }
+
+    $("searchInput").addEventListener("input", renderList);
+    $("chatForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const input = $("chatInput");
+      ask(input.value);
+      input.value = "";
+      input.focus();
+    });
+    $("resetChatBtn").addEventListener("click", resetChat);
+    $("copyPromptBtn").addEventListener("click", async () => {
+      const p = activePersona();
+      const prompt = renderCopyPrompt(p);
+      try {
+        await navigator.clipboard.writeText(prompt);
+        $("copyPromptBtn").textContent = "コピーしました";
+        setTimeout(() => $("copyPromptBtn").textContent = "AI用プロンプトをコピー", 1300);
+      } catch (e) {
+        alert(prompt);
+      }
+    });
+
+    resetChat();
+    renderAll();
+    window.addEventListener("resize", () => drawRadar(activePersona()));
+  </script>
+</body>
+</html>
