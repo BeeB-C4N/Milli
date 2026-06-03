@@ -219,18 +219,14 @@
           </div>
           <div class="panel">
             <h2 class="section-title">心理・痛点・訴求</h2>
-            <div class="tabs" id="insightTabs"></div>
-            <ul id="insightList" class="list-block"></ul>
-            <div id="printInsightTable" class="print-only print-table-block"></div>
+            <div id="insightTable" class="always-table-block"></div>
           </div>
         </section>
 
         <section class="grid-2">
           <div class="panel">
             <h2 class="section-title">Jobs To Be Done</h2>
-            <div class="tabs" id="jobTabs"></div>
-            <ul id="jobList" class="list-block"></ul>
-            <div id="printJobTable" class="print-only print-table-block"></div>
+            <div id="jobTable" class="always-table-block"></div>
           </div>
           <div class="panel">
             <h2 class="section-title">推奨アクション</h2>
@@ -552,7 +548,7 @@
     function renderAll() {
       const p = activePersona();
       renderOverall(); renderList(); renderHeader(p); drawRadar(p); renderBars(p); renderProfile(p);
-      renderInsightTabs(p); renderJobTabs(p); renderActions(p); renderVoice(p); renderComparison(); renderChat(); renderModal();
+      renderAlwaysTables(p); renderActions(p); renderVoice(p); renderComparison(); renderChat(); renderModal();
     }
 
     $("searchInput").addEventListener("input", renderList);
