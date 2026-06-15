@@ -13,8 +13,12 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParse (CSV読み込み用) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -22,6 +26,7 @@
             --tifo-text: #2D3748;
             --tifo-primary: #4FD1C5;
             --tifo-primary-dark: #38B2AC;
+            --tifo-secondary: #ED8936;
             --tifo-card-border: #E2E8F0;
             --tifo-card-bg: #FFFFFF;
         }
@@ -45,7 +50,7 @@
             align-items: center; justify-content: center; font-weight: bold; color: white;
             flex-shrink: 0;
         }
-        .rank-1 { background-color: #4FD1C5; } /* TIFOカラーに合わせて1位をエメラルドグリーンに */
+        .rank-1 { background-color: #4FD1C5; } /* TIFOカラー */
         .rank-2 { background-color: #CBD5E0; }
         .rank-3 { background-color: #A0AEC0; }
         .rank-default { background-color: #E2E8F0; color: #4A5568; }
@@ -60,6 +65,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            white-space: nowrap;
         }
         .feedback-tab-button:hover {
             background-color: #F7FAFC;
@@ -70,7 +76,7 @@
             border-bottom-color: var(--tifo-primary);
         }
 
-        /* 横スクロールバーのカスタマイズ (細くて目立たないが操作可能) */
+        /* 横スクロールバーのカスタマイズ */
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
@@ -81,7 +87,9 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // データフェッチ失敗時用のフォールバックデータ（2026年4月と3月の一部データをサンプルとして内包）
+        // ==========================================
+        // --- JNTO データとロジック ---
+        // ==========================================
         const fallbackData = [
             {
                 "report": { "source_name_ja": "日本政府観光局（JNTO）", "report_title_ja": "訪日外客数（2026年4月推計値）", "data_year": 2026, "data_month_number": 4 },
@@ -99,26 +107,9 @@
                     { "market_key": "TW", "name_ja": "台湾", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 643500, "change_pct_vs_comparison_year": 19.7 } }, "record": { "month_record": true, "record_note_ja": "4月として過去最高" }, "market_context": { "status_summary_ja": "継続する訪日旅行人気に加え、チャーター便運航や4連休の影響等もあり、過去最高を記録した。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "aviation_updates_ja": [ "チャーター便の運航", "増便" ], "demand_events_ja": [ "4連休" ] }, "dashboard_tags": [ "moderate_growth" ] },
                     { "market_key": "US", "name_ja": "米国", "region_ja": "北米", "visitor_arrivals": { "month": { "current_value": 330000, "change_pct_vs_comparison_year": 0.8 } }, "record": { "month_record": true, "record_note_ja": "4月として過去最高" }, "market_context": { "status_summary_ja": "イースター休暇の期ずれによる需要の分散はあったが、継続する人気により過去最高を記録。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "demand_events_ja": [ "イースター休暇の期ずれ" ], "aviation_updates_ja": [] }, "dashboard_tags": [ "moderate_growth", "record_high" ] }
                 ]
-            },
-            {
-                "report": { "source_name_ja": "日本政府観光局（JNTO）", "report_title_ja": "訪日外客数（2026年3月推計値）", "data_year": 2026, "data_month_number": 3 },
-                "overall": {
-                    "visitor_arrivals": { "month": { "current_value": 3618900, "change_pct_vs_comparison_year": 3.5 } },
-                    "headline_summary_ja": "2026年3月の訪日外国人観光客数は3,618,900人で、前年同月比3.5%増となり、3月として過去最高を更新した。",
-                    "overall_context_ja": [
-                        "例年3月下旬ごろから桜シーズンを迎えることに加え、4月のイースターに合わせたスクールホリデーによる訪日需要の高まりが見られた。"
-                    ]
-                },
-                "markets": [
-                    { "market_key": "KR", "name_ja": "韓国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 795600, "change_pct_vs_comparison_year": 15.0 } }, "record": { "month_record": true, "record_note_ja": "3月として過去最高" }, "market_context": { "status_summary_ja": "継続する訪日旅行人気と増便により好調を維持。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "aviation_updates_ja": [ "釜山～静岡間の新規就航" ], "demand_events_ja": [] }, "dashboard_tags": [ "moderate_growth" ] },
-                    { "market_key": "CN", "name_ja": "中国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 291600, "change_pct_vs_comparison_year": -55.9 } }, "record": {}, "market_context": { "status_summary_ja": "減便および渡航注意喚起により減少。", "positive_drivers_ja": [], "constraints_ja": [ "渡航注意喚起" ], "aviation_updates_ja": [ "航空便の減便" ], "demand_events_ja": [] }, "dashboard_tags": [ "severe_decline" ] },
-                    { "market_key": "TW", "name_ja": "台湾", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 653300, "change_pct_vs_comparison_year": 24.9 } }, "record": { "month_record": true, "record_note_ja": "3月として過去最高" }, "market_context": { "status_summary_ja": "スポーツイベントの開催や増便により好調。", "positive_drivers_ja": [ "スポーツイベント開催" ], "constraints_ja": [], "aviation_updates_ja": [ "増便" ], "demand_events_ja": [] }, "dashboard_tags": [ "strong_growth" ] },
-                    { "market_key": "US", "name_ja": "米国", "region_ja": "北米", "visitor_arrivals": { "month": { "current_value": 375900, "change_pct_vs_comparison_year": 9.7 } }, "record": { "all_time_monthly_record": true, "record_note_ja": "単月として過去最高" }, "market_context": { "status_summary_ja": "スクールホリデーと継続する人気により単月過去最高。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "demand_events_ja": [ "スクールホリデー" ], "aviation_updates_ja": [] }, "dashboard_tags": [ "moderate_growth", "all_time_record_high" ] }
-                ]
             }
         ];
 
-        // UI用アイコン
         const Icons = {
             TrendingUp: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>,
             TrendingDown: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>,
@@ -154,7 +145,6 @@
             if (change === null || change === undefined) return <span>-</span>;
             const isPositive = change > 0;
             const isNegative = change < 0;
-            // トンマナに合わせて赤/緑を強すぎない色(Teal系/Slate系)に変更
             let colorClass = "text-slate-500";
             if (isPositive) colorClass = reverseColor ? "text-slate-500" : "text-teal-600";
             if (isNegative) colorClass = reverseColor ? "text-teal-600" : "text-slate-500";
@@ -166,7 +156,7 @@
             );
         };
 
-        // --- ツールチップロジック ---
+        // --- JNTOツールチップロジック ---
         const getOrCreateTooltip = (chart) => {
             let tooltipEl = chart.canvas.parentNode.querySelector('div');
             if (!tooltipEl) {
@@ -256,7 +246,6 @@
                     colorSquare.style.display = 'inline-block';
                     colorSquare.style.borderRadius = '2px';
 
-                    // 人数という表現にする
                     const rawVal = body[0].split(': ')[1] || body[0];
                     const textNode = document.createTextNode(`人数: ${rawVal}`);
 
@@ -269,7 +258,6 @@
                     tbody.appendChild(tr);
                 });
 
-                // トンマナに合わせたカラーの四角で要因を追加
                 if (ctxData) {
                     const addContextItem = (items, labelStr, colorCode) => {
                         if (items && items.length > 0) {
@@ -327,14 +315,11 @@
             }
 
             const position = chart.canvas.getBoundingClientRect();
-            
-            // Tooltipを親要素（canvas）からの相対位置に配置
             tooltipEl.style.opacity = 1;
             tooltipEl.style.left = tooltip.caretX + 'px';
             tooltipEl.style.top = tooltip.caretY + 'px';
         };
 
-        // --- グラフコンポーネント (Chart.js) ---
         const TrendChart = ({ marketKey, rawDataList }) => {
             const chartRef = React.useRef(null);
             const chartInstance = React.useRef(null);
@@ -386,14 +371,11 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                enabled: false, // デフォルトのツールチップを無効化
+                                enabled: false,
                                 position: 'nearest',
                                 external: (context) => externalTooltipHandler(context, marketKey, rawDataList)
                             }
@@ -414,11 +396,7 @@
                     }
                 });
 
-                return () => {
-                    if (chartInstance.current) {
-                        chartInstance.current.destroy();
-                    }
-                };
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
             }, [marketKey, rawDataList]);
 
             return (
@@ -433,7 +411,6 @@
             );
         };
 
-        // --- 過去の推移と背景テーブル ---
         const HistoryTable = ({ marketKey, rawDataList }) => {
             const historyData = [...rawDataList]
                 .sort((a, b) => {
@@ -482,7 +459,6 @@
             );
         };
 
-        // 「サマリー」タブコンテンツ
         const OverviewTab = ({ data, markets, onSelectMarket }) => (
             <div className="space-y-6 animate-fade-in">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -498,7 +474,7 @@
                         </div>
                     </div>
                     <div className="tifo-card lg:col-span-2 border-l-4 border-l-[var(--tifo-primary)]">
-                        <h2 className="text-sm font-bold mb-3 text-[var(--tifo-primary-dark)]">概況ハイライト</h2>
+                        <h2 className="text-sm font-bold mb-3 text-[var(--tifo-primary-dark)]">サマリー ハイライト</h2>
                         <p className="font-bold text-[1.1rem] mb-4 text-slate-800 leading-snug">{data.overall.headline_summary_ja}</p>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm text-slate-600">
                             {(data.overall.overall_context_ja || []).slice(0,4).map((ctx, i) => (
@@ -531,7 +507,6 @@
                                 {markets.map((market, index) => {
                                     const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-default';
                                     const tags = (market.dashboard_tags || []).slice(0, 3);
-                                    
                                     return (
                                         <tr 
                                             key={market.market_key} 
@@ -543,17 +518,13 @@
                                             </td>
                                             <td className="py-3 px-4 font-bold text-slate-800">{market.name_ja}</td>
                                             <td className="py-3 px-4 text-right font-medium">{formatNumber(market.visitor_arrivals.month.current_value)}</td>
-                                            <td className="py-3 px-4 text-right">
-                                                <ChangeText change={market.visitor_arrivals.month.change_pct_vs_comparison_year} />
-                                            </td>
+                                            <td className="py-3 px-4 text-right"><ChangeText change={market.visitor_arrivals.month.change_pct_vs_comparison_year} /></td>
                                             <td className="py-3 px-4">
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {tags.map(tag => {
                                                         const tInfo = tagStyles[tag] || { label: tag, style: "bg-slate-100 text-slate-600 border-slate-200" };
                                                         return (
-                                                            <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${tInfo.style}`}>
-                                                                {tInfo.label}
-                                                            </span>
+                                                            <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${tInfo.style}`}>{tInfo.label}</span>
                                                         );
                                                     })}
                                                 </div>
@@ -568,7 +539,6 @@
             </div>
         );
 
-        // 「国・地域別の要因分析」タブコンテンツ
         const MarketAnalysisTab = ({ markets, selectedMarket, onSelectMarket, rawDataList }) => {
             const market = markets.find(m => m.market_key === selectedMarket) || markets[0];
             const ctx = market.market_context || {};
@@ -577,9 +547,7 @@
                 if (!items || items.length === 0) return null;
                 return (
                     <div className={`p-4 rounded-xl border bg-white shadow-sm ${borderColorClass}`}>
-                        <h4 className="font-bold flex items-center mb-3 text-sm text-slate-700 border-b border-slate-100 pb-2">
-                            {title}
-                        </h4>
+                        <h4 className="font-bold flex items-center mb-3 text-sm text-slate-700 border-b border-slate-100 pb-2">{title}</h4>
                         <ul className="space-y-2">
                             {items.map((item, idx) => (
                                 <li key={idx} className="text-sm text-slate-600 flex items-start leading-snug">
@@ -594,7 +562,6 @@
 
             return (
                 <div className="flex flex-col gap-6 animate-fade-in">
-                    {/* スマホ向け横スクロールチップ（PCでも上部に配置し省スペース化） */}
                     <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                         <div className="text-xs font-bold text-slate-400 mb-2 px-1">分析対象国を選択:</div>
                         <div className="flex flex-nowrap overflow-x-auto custom-scrollbar pb-3 gap-2">
@@ -610,7 +577,6 @@
                         </div>
                     </div>
 
-                    {/* 詳細分析エリア */}
                     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
                         <div className="flex flex-wrap justify-between items-start mb-6 gap-4">
                             <div>
@@ -650,30 +616,10 @@
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <AnalysisCard 
-                                title="好調・増加要因" 
-                                items={ctx.positive_drivers_ja}
-                                borderColorClass="border-t-4 border-t-teal-400"
-                                dotColorClass="bg-teal-400"
-                            />
-                            <AnalysisCard 
-                                title="懸念・減少要因" 
-                                items={ctx.constraints_ja}
-                                borderColorClass="border-t-4 border-t-slate-400"
-                                dotColorClass="bg-slate-400"
-                            />
-                            <AnalysisCard 
-                                title="季節イベント・休暇" 
-                                items={ctx.demand_events_ja}
-                                borderColorClass="border-t-4 border-t-teal-200 bg-teal-50"
-                                dotColorClass="bg-teal-300"
-                            />
-                            <AnalysisCard 
-                                title="航空便の動向" 
-                                items={ctx.aviation_updates_ja}
-                                borderColorClass="border-t-4 border-t-slate-200"
-                                dotColorClass="bg-slate-300"
-                            />
+                            <AnalysisCard title="好調・増加要因" items={ctx.positive_drivers_ja} borderColorClass="border-t-4 border-t-teal-400" dotColorClass="bg-teal-400" />
+                            <AnalysisCard title="懸念・減少要因" items={ctx.constraints_ja} borderColorClass="border-t-4 border-t-slate-400" dotColorClass="bg-slate-400" />
+                            <AnalysisCard title="季節イベント・休暇" items={ctx.demand_events_ja} borderColorClass="border-t-4 border-t-teal-200 bg-teal-50" dotColorClass="bg-teal-300" />
+                            <AnalysisCard title="航空便の動向" items={ctx.aviation_updates_ja} borderColorClass="border-t-4 border-t-slate-200" dotColorClass="bg-slate-300" />
                         </div>
 
                         <TrendChart marketKey={market.market_key} rawDataList={rawDataList} />
@@ -683,124 +629,564 @@
             );
         };
 
-        const App = () => {
-            const [rawDataList, setRawDataList] = React.useState([]);
-            const [isLoading, setIsLoading] = React.useState(true);
-            const [isFallback, setIsFallback] = React.useState(false);
-            
-            // データの動的フェッチ（ディレクトリ内のファイルを予測して取得）
+
+        // ==========================================
+        // --- 兼六園・金沢城公園 データとロジック ---
+        // ==========================================
+        const SHEET_ID = '1HdaqmIPXDChGrc2XynYPtzkDRIIBQObh41GS9T4ohlo';
+        const URL_VISITORS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('兼六園金沢城公園')}`;
+        const URL_FOREIGN = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('兼六園外国人国別')}`;
+
+        const fetchCSV = (url) => {
+            return new Promise((resolve, reject) => {
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => resolve(results.data),
+                    error: (err) => reject(err)
+                });
+            });
+        };
+
+        const getFiscalYear = (dateStr) => {
+            const d = new Date(dateStr);
+            const year = d.getFullYear();
+            const month = d.getMonth() + 1;
+            return month >= 4 ? year : year - 1;
+        };
+
+        const processParkData = (rawVisitors, rawForeign) => {
+            const foreignAgg = {};
+            rawForeign.forEach(row => {
+                const m = row['年月'];
+                const count = parseInt((row['人数'] || '0').replace(/,/g, ''), 10);
+                if (!m) return;
+                if (!foreignAgg[m]) foreignAgg[m] = { total: 0, countries: [] };
+                foreignAgg[m].total += count;
+                if (count > 0) foreignAgg[m].countries.push({ country: row['国と地域'], count: count });
+            });
+
+            const monthlyData = rawVisitors.map(row => {
+                const m = row['年月'];
+                const kenrokuen = parseInt((row['兼六園入園者数'] || '0').replace(/,/g, ''), 10) || 0;
+                const kanazawa = parseInt((row['金沢城公園入園者数'] || '0').replace(/,/g, ''), 10) || 0;
+                
+                let inboundCount = 0;
+                let foreignDetails = [];
+                if (foreignAgg[m]) {
+                    inboundCount = foreignAgg[m].total;
+                    foreignDetails = foreignAgg[m].countries.sort((a, b) => b.count - a.count);
+                }
+                const inboundIndex = kenrokuen > 0 ? (inboundCount / kenrokuen) * 100 : 0;
+
+                return { month: m, date: new Date(m), kenrokuen, kanazawa, inboundCount, inboundIndex, foreignDetails };
+            }).filter(d => !isNaN(d.date.getTime())).sort((a, b) => a.date - b.date);
+
+            const yearlyAgg = {};
+            monthlyData.forEach(row => {
+                const fy = getFiscalYear(row.month);
+                if (!yearlyAgg[fy]) yearlyAgg[fy] = { kenrokuen: 0, kanazawa: 0, inbound: 0 };
+                yearlyAgg[fy].kenrokuen += row.kenrokuen;
+                yearlyAgg[fy].kanazawa += row.kanazawa;
+                yearlyAgg[fy].inbound += row.inboundCount;
+            });
+
+            return { monthlyData, yearlyAgg };
+        };
+
+        // --- Park 用のコンポーネント ---
+        const ParkMonthlyChart = ({ data, targetKey, themeColorHex }) => {
+            const chartRef = React.useRef(null);
+            const chartInstance = React.useRef(null);
+            const [period, setPeriod] = React.useState('3years');
+
             React.useEffect(() => {
-                const fetchAllData = async () => {
-                    const fetchedData = [];
-                    const startYear = 2024;
-                    const startMonth = 4;
+                if (!chartRef.current) return;
+                let sourceData = data;
+                if (period === '3years') sourceData = data.slice(-36);
+
+                const labels = sourceData.map(d => `${d.date.getFullYear()}/${d.date.getMonth()+1}`);
+                const chartData = sourceData.map(d => d[targetKey]);
+
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '入園者数',
+                            data: chartData,
+                            borderColor: themeColorHex,
+                            backgroundColor: themeColorHex + '33',
+                            borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } } }
+                    }
+                });
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [data, targetKey, themeColorHex, period]);
+
+            return (
+                <div className="tifo-card bg-white border-slate-200">
+                    <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2"><i className="fa-solid fa-chart-area"></i> 月次入園者数推移</h2>
+                        <div className="flex bg-slate-100 rounded-lg p-1">
+                            <button onClick={() => setPeriod('3years')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${period === '3years' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>過去3年</button>
+                            <button onClick={() => setPeriod('all')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${period === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>全期間</button>
+                        </div>
+                    </div>
+                    <div className="h-72 relative"><canvas ref={chartRef}></canvas></div>
+                </div>
+            );
+        };
+
+        const ParkYearlyChart = ({ yearlyAgg, targetKey, themeColorHex }) => {
+            const chartRef = React.useRef(null);
+            const chartInstance = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!chartRef.current) return;
+                const fyLabels = Object.keys(yearlyAgg).sort();
+                const fyData = fyLabels.map(fy => yearlyAgg[fy][targetKey]);
+
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: fyLabels.map(fy => `${fy}年度`),
+                        datasets: [{ label: '入園者数', data: fyData, backgroundColor: themeColorHex, borderRadius: 4 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } } }
+                    }
+                });
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [yearlyAgg, targetKey, themeColorHex]);
+
+            return (
+                <div className="tifo-card bg-white border-slate-200">
+                    <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><i className="fa-solid fa-chart-bar"></i> 年度別 入園者数推移</h2>
+                    <div className="h-72 relative"><canvas ref={chartRef}></canvas></div>
+                </div>
+            );
+        };
+
+        const ParkCountryModal = ({ isOpen, onClose, country, monthlyData }) => {
+            const [period, setPeriod] = React.useState('monthly');
+            const chartRef = React.useRef(null);
+            const chartInstance = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!isOpen || !chartRef.current) return;
+                const filteredData = monthlyData.filter(d => d.date >= new Date('2019/01/01'));
+                let labels = [];
+                let dataCounts = [];
+
+                if (period === 'monthly') {
+                    filteredData.forEach(d => {
+                        labels.push(`${d.date.getFullYear()}/${d.date.getMonth() + 1}`);
+                        const detail = d.foreignDetails.find(fd => fd.country === country);
+                        dataCounts.push(detail ? detail.count : 0);
+                    });
+                } else {
+                    const yearlyAgg = {};
+                    filteredData.forEach(d => {
+                        const fy = getFiscalYear(d.month);
+                        if (!yearlyAgg[fy]) yearlyAgg[fy] = 0;
+                        const detail = d.foreignDetails.find(fd => fd.country === country);
+                        if (detail) yearlyAgg[fy] += detail.count;
+                    });
+                    const fyLabels = Object.keys(yearlyAgg).sort();
+                    fyLabels.forEach(fy => { labels.push(`${fy}年度`); dataCounts.push(yearlyAgg[fy]); });
+                }
+
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: period === 'monthly' ? 'line' : 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `${country} (人)`, data: dataCounts,
+                            borderColor: '#4FD1C5', backgroundColor: period === 'monthly' ? '#4FD1C533' : '#4FD1C5',
+                            borderWidth: period === 'monthly' ? 2 : 0, fill: period === 'monthly', tension: 0.4,
+                            pointRadius: period === 'monthly' ? 2 : 0, borderRadius: period === 'yearly' ? 4 : 0
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } } }
+                    }
+                });
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [isOpen, period, country, monthlyData]);
+
+            return (
+                <div className={`fixed inset-0 bg-slate-800 bg-opacity-75 flex items-center justify-center z-[9999] transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
+                    <div className={`bg-white p-6 rounded-2xl w-[90%] max-w-[800px] shadow-2xl transition-transform ${isOpen ? 'translate-y-0' : '-translate-y-5'}`}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><i className="fa-solid fa-earth-asia text-slate-500"></i> {country} の入園者数推移</h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl"><i className="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div className="flex justify-end mb-4">
+                            <div className="flex bg-slate-100 rounded-lg p-1">
+                                <button onClick={() => setPeriod('monthly')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${period === 'monthly' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>月別推移</button>
+                                <button onClick={() => setPeriod('yearly')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${period === 'yearly' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>年度別推移</button>
+                            </div>
+                        </div>
+                        <div className="h-72 relative"><canvas ref={chartRef}></canvas></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ParkInboundSection = ({ monthlyData }) => {
+            const [rankingType, setRankingType] = React.useState('monthly');
+            const latestDate = monthlyData[monthlyData.length - 1].date;
+            const [selectedYear, setSelectedYear] = React.useState(latestDate.getFullYear());
+            const [selectedMonth, setSelectedMonth] = React.useState(latestDate.getMonth() + 1);
+            
+            const [modalOpen, setModalOpen] = React.useState(false);
+            const [modalCountry, setModalCountry] = React.useState('');
+
+            const years = [...new Set(monthlyData.map(d => d.date.getFullYear()))];
+            
+            let targetData = null;
+            if (rankingType === 'yearly') {
+                let totalKenrokuen = 0, totalInbound = 0;
+                const foreignMap = {};
+                monthlyData.forEach(d => {
+                    if (getFiscalYear(d.month) === selectedYear) {
+                        totalKenrokuen += d.kenrokuen;
+                        totalInbound += d.inboundCount;
+                        d.foreignDetails.forEach(fd => {
+                            if (!foreignMap[fd.country]) foreignMap[fd.country] = 0;
+                            foreignMap[fd.country] += fd.count;
+                        });
+                    }
+                });
+                if (totalKenrokuen > 0) {
+                    targetData = {
+                        kenrokuen: totalKenrokuen, inboundCount: totalInbound, inboundIndex: (totalInbound / totalKenrokuen) * 100,
+                        foreignDetails: Object.keys(foreignMap).map(country => ({ country, count: foreignMap[country] })).sort((a, b) => b.count - a.count)
+                    };
+                }
+            } else {
+                targetData = monthlyData.find(d => d.date.getFullYear() === selectedYear && (d.date.getMonth() + 1) === selectedMonth);
+            }
+
+            const chartRef = React.useRef(null);
+            const chartInstance = React.useRef(null);
+            const [chartPeriod, setChartPeriod] = React.useState('3years');
+
+            React.useEffect(() => {
+                if (!chartRef.current) return;
+                const validData = monthlyData.filter(d => d.foreignDetails && d.foreignDetails.length > 0);
+                let sourceData = validData;
+                if (chartPeriod === '3years') sourceData = validData.slice(-36);
+                
+                const labels = sourceData.map(d => `${d.date.getFullYear()}/${d.date.getMonth()+1}`);
+                const data = sourceData.map(d => d.inboundIndex);
+
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'インバウンド割合 (%)', data: data, borderColor: '#4FD1C5', backgroundColor: '#4FD1C533',
+                            borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+                    }
+                });
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [monthlyData, chartPeriod]);
+
+            return (
+                <div className="flex flex-col gap-6">
+                    <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="font-bold text-slate-700 flex items-center gap-2"><i className="fa-regular fa-calendar-check text-teal-500"></i> インバウンド詳細</div>
+                        <div className="flex items-center gap-2">
+                            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} className="border border-slate-200 rounded p-1 text-sm bg-slate-50 outline-none focus:border-teal-500">
+                                {years.map(y => <option key={y} value={y}>{y}年</option>)}
+                            </select>
+                            <select value={rankingType === 'yearly' ? 'yearly' : selectedMonth} onChange={e => {
+                                if (e.target.value === 'yearly') setRankingType('yearly');
+                                else { setRankingType('monthly'); setSelectedMonth(parseInt(e.target.value)); }
+                            }} className="border border-slate-200 rounded p-1 text-sm bg-slate-50 outline-none focus:border-teal-500">
+                                {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>{m}月</option>)}
+                                <option value="yearly">年度</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="tifo-card bg-white border-slate-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2"><i className="fa-solid fa-earth-asia"></i> 国別ランキング</h2>
+                                <span className="text-xs text-slate-400">※行クリックで推移</span>
+                            </div>
+                            <div className="overflow-y-auto custom-scrollbar pr-2 max-h-[280px]">
+                                {!targetData || !targetData.foreignDetails || targetData.foreignDetails.length === 0 ? (
+                                    <div className="text-slate-400 text-sm py-4">データがありません</div>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {targetData.foreignDetails.map((item, index) => {
+                                            const rankClass = index === 0 ? 'bg-teal-400 text-white' : index === 1 ? 'bg-slate-300 text-slate-700' : index === 2 ? 'bg-slate-400 text-white' : 'bg-slate-200 text-slate-500';
+                                            return (
+                                                <li key={item.country} onClick={() => { setModalCountry(item.country); setModalOpen(true); }} className="flex items-center justify-between p-3 border-b border-dashed border-slate-200 hover:bg-teal-50 hover:border-transparent rounded-lg cursor-pointer transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${rankClass}`}>{index + 1}</div>
+                                                        <div className="font-bold text-slate-700 text-sm">{item.country}</div>
+                                                    </div>
+                                                    <div className="font-bold text-teal-600 text-sm">{formatNumber(item.count)} <span className="text-xs text-slate-400 font-normal">人</span></div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="tifo-card bg-white border-slate-200">
+                            <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><i className="fa-solid fa-plane"></i> インバウンド観光客指数</h2>
+                            <div className="flex flex-col items-center justify-center flex-1 py-4">
+                                <div className="text-5xl font-black text-teal-500 mb-1">{targetData ? targetData.inboundIndex.toFixed(1) : 0}%</div>
+                                <div className="text-sm text-slate-500 mb-6">インバウンド割合</div>
+                                
+                                <div className="w-full bg-slate-100 rounded-full overflow-hidden h-5">
+                                    <div className="bg-teal-400 h-full flex items-center justify-center text-white text-xs font-bold transition-all duration-1000" style={{ width: `${targetData ? targetData.inboundIndex : 0}%` }}>
+                                        {targetData ? targetData.inboundIndex.toFixed(1) : 0}%
+                                    </div>
+                                </div>
+                                
+                                <div className="w-full flex justify-between mt-2 text-xs font-bold text-slate-500 px-1">
+                                    <span>国内: {targetData ? formatNumber(Math.max(0, targetData.kenrokuen - targetData.inboundCount)) : 0}人</span>
+                                    <span>海外: {targetData ? formatNumber(targetData.inboundCount) : 0}人</span>
+                                </div>
+                            </div>
+                            <div className="text-xs text-slate-400 pt-3 border-t border-slate-100">※ 指数 = 外国人入園者数 / 総入園者数</div>
+                        </div>
+                    </div>
+
+                    <div className="tifo-card bg-white border-slate-200">
+                        <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                            <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2"><i className="fa-solid fa-chart-line"></i> インバウンド観光客指数 推移</h2>
+                            <div className="flex bg-slate-100 rounded-lg p-1">
+                                <button onClick={() => setChartPeriod('3years')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${chartPeriod === '3years' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>過去3年</button>
+                                <button onClick={() => setChartPeriod('all')} className={`px-3 py-1 text-sm font-bold rounded-md transition-colors ${chartPeriod === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>全期間</button>
+                            </div>
+                        </div>
+                        <div className="h-72 relative"><canvas ref={chartRef}></canvas></div>
+                    </div>
                     
+                    <ParkCountryModal isOpen={modalOpen} onClose={() => setModalOpen(false)} country={modalCountry} monthlyData={monthlyData} />
+                </div>
+            );
+        };
+
+        const ParkYearlyTable = ({ yearlyAgg, isKenrokuen, targetKey }) => {
+            const fyLabels = Object.keys(yearlyAgg).sort((a, b) => b - a); // 降順
+            return (
+                <div className="tifo-card bg-white border-slate-200">
+                    <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><i className="fa-solid fa-table"></i> 年度別 データ表</h2>
+                    <div className="overflow-x-auto custom-scrollbar max-h-[350px]">
+                        <table className="min-w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-600 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th className="py-3 px-4 rounded-tl-lg whitespace-nowrap">年度</th>
+                                    <th className="py-3 px-4 text-right whitespace-nowrap">入園者数(人)</th>
+                                    <th className="py-3 px-4 text-right whitespace-nowrap">前年度比</th>
+                                    {isKenrokuen && <th className="py-3 px-4 text-right rounded-tr-lg whitespace-nowrap">インバウンド(人)</th>}
+                                    {!isKenrokuen && <th className="py-3 px-4 rounded-tr-lg"></th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {fyLabels.map((fy, i) => {
+                                    const count = yearlyAgg[fy][targetKey];
+                                    let compareText = '-';
+                                    if (i < fyLabels.length - 1) { // 降順なので、i+1 が前年度
+                                        const prevCount = yearlyAgg[fyLabels[i+1]][targetKey];
+                                        if (prevCount > 0) {
+                                            const diff = ((count - prevCount) / prevCount * 100).toFixed(1);
+                                            const color = diff > 0 ? '#48BB78' : '#F56565';
+                                            const icon = diff > 0 ? 'fa-caret-up' : 'fa-caret-down';
+                                            compareText = `<span style="color: ${color}; font-weight:bold;"><i class="fa-solid ${icon}"></i> ${Math.abs(diff)}%</span>`;
+                                        }
+                                    }
+                                    return (
+                                        <tr key={fy} className="hover:bg-slate-50 transition-colors">
+                                            <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">{fy}年度</td>
+                                            <td className="py-3 px-4 text-right font-medium text-slate-800">{formatNumber(count)}</td>
+                                            <td className="py-3 px-4 text-right whitespace-nowrap" dangerouslySetInnerHTML={{__html: compareText}}></td>
+                                            {isKenrokuen && <td className="py-3 px-4 text-right font-medium text-teal-700">{formatNumber(yearlyAgg[fy].inbound)}</td>}
+                                            {!isKenrokuen && <td></td>}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        const ParkDashboard = ({ parkType, parkData }) => {
+            if (!parkData) return null;
+            const { monthlyData, yearlyAgg } = parkData;
+            const isKenrokuen = parkType === 'kenrokuen';
+            const targetKey = parkType; 
+            const themeColorClass = isKenrokuen ? 'text-teal-600' : 'text-orange-500';
+            const themeColorHex = isKenrokuen ? '#4FD1C5' : '#ED8936';
+
+            const latestData = monthlyData[monthlyData.length - 1];
+            const currentFY = getFiscalYear(latestData.month);
+
+            let ytdCount = 0;
+            monthlyData.forEach(row => {
+                if (getFiscalYear(row.month) === currentFY) {
+                    ytdCount += row[targetKey];
+                }
+            });
+
+            const lastYearSameMonthDate = new Date(latestData.date);
+            lastYearSameMonthDate.setFullYear(lastYearSameMonthDate.getFullYear() - 1);
+            const lastYearData = monthlyData.find(d => 
+                d.date.getFullYear() === lastYearSameMonthDate.getFullYear() && 
+                d.date.getMonth() === lastYearSameMonthDate.getMonth()
+            );
+
+            let yoyRatio = null;
+            if (lastYearData && lastYearData[targetKey] > 0) {
+                yoyRatio = ((latestData[targetKey] - lastYearData[targetKey]) / lastYearData[targetKey]) * 100;
+            }
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="tifo-card bg-white border-slate-200">
+                            <h2 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2"><i className="fa-regular fa-calendar-check"></i> 直近月 入園者数 ({latestData.date.getFullYear()}年{latestData.date.getMonth()+1}月)</h2>
+                            <div className={`text-4xl font-black ${themeColorClass} mb-2`}>{formatNumber(latestData[targetKey])} <span className="text-lg font-normal text-slate-500">人</span></div>
+                            <div className="text-sm text-slate-500">{yoyRatio !== null ? <span>前年同月比: <ChangeText change={yoyRatio} /></span> : '前年同月比: データなし'}</div>
+                        </div>
+                        <div className="tifo-card bg-white border-slate-200">
+                            <h2 className="text-sm font-bold text-slate-500 mb-2 flex items-center gap-2"><i className="fa-solid fa-chart-line"></i> 今年度 累計入園者数 ({currentFY}年度)</h2>
+                            <div className={`text-4xl font-black ${themeColorClass} mb-2`}>{formatNumber(ytdCount)} <span className="text-lg font-normal text-slate-500">人</span></div>
+                            <div className="text-sm text-slate-500">4月〜現在までの累計</div>
+                        </div>
+                    </div>
+                    <ParkMonthlyChart data={monthlyData} targetKey={targetKey} themeColorHex={themeColorHex} />
+                    <ParkYearlyChart yearlyAgg={yearlyAgg} targetKey={targetKey} themeColorHex={themeColorHex} />
+                    {isKenrokuen && <ParkInboundSection monthlyData={monthlyData} />}
+                    <ParkYearlyTable yearlyAgg={yearlyAgg} isKenrokuen={isKenrokuen} targetKey={targetKey} />
+                </div>
+            );
+        };
+
+
+        // ==========================================
+        // --- App コンポーネント (統合) ---
+        // ==========================================
+        const App = () => {
+            // JNTO状態
+            const [jntoDataList, setJntoDataList] = React.useState([]);
+            const [isJntoLoading, setIsJntoLoading] = React.useState(true);
+            const [isFallback, setIsFallback] = React.useState(false);
+            const [selectedMonth, setSelectedMonth] = React.useState('');
+            const [selectedMarket, setSelectedMarket] = React.useState('');
+            
+            // Park状態
+            const [parkData, setParkData] = React.useState(null);
+            const [isParkLoading, setIsParkLoading] = React.useState(true);
+            const [parkError, setParkError] = React.useState(null);
+
+            const [activeTab, setActiveTab] = React.useState('overview');
+
+            // データフェッチ
+            React.useEffect(() => {
+                // JNTO
+                const fetchJNTO = async () => {
+                    const fetchedData = [];
+                    const startYear = 2024, startMonth = 4;
                     const today = new Date();
                     const endYear = today.getFullYear();
                     let endMonth = today.getMonth() + 2; 
                     let actualEndYear = endYear;
-                    if (endMonth > 12) {
-                        endMonth -= 12;
-                        actualEndYear++;
-                    }
+                    if (endMonth > 12) { endMonth -= 12; actualEndYear++; }
 
                     const fetchPromises = [];
-
                     for (let y = startYear; y <= actualEndYear; y++) {
                         let mStart = (y === startYear) ? startMonth : 1;
                         let mEnd = (y === actualEndYear) ? endMonth : 12;
-
                         for (let m = mStart; m <= mEnd; m++) {
-                            const mm = m.toString().padStart(2, '0');
-                            const url = `./data/jnto_${y}${mm}.json`;
-                            
-                            fetchPromises.push(
-                                fetch(url)
-                                    .then(res => {
-                                        if (res.ok) return res.json();
-                                        return null;
-                                    })
-                                    .catch(e => null)
-                            );
+                            const url = `./data/jnto_${y}${m.toString().padStart(2, '0')}.json`;
+                            fetchPromises.push(fetch(url).then(res => res.ok ? res.json() : null).catch(() => null));
                         }
                     }
 
                     try {
                         const results = await Promise.all(fetchPromises);
-                        results.forEach(res => {
-                            if (res && res.schema_version && res.report) {
-                                fetchedData.push(res);
-                            }
-                        });
-
-                        if (fetchedData.length > 0) {
-                            setRawDataList(fetchedData);
-                        } else {
-                            console.warn("./data/ からファイルを取得できませんでした。サンプルデータを表示します。");
-                            setRawDataList(fallbackData);
-                            setIsFallback(true);
-                        }
+                        results.forEach(res => { if (res && res.schema_version && res.report) fetchedData.push(res); });
+                        if (fetchedData.length > 0) setJntoDataList(fetchedData);
+                        else { setJntoDataList(fallbackData); setIsFallback(true); }
                     } catch (err) {
-                        console.error("データ取得エラー:", err);
-                        setRawDataList(fallbackData);
-                        setIsFallback(true);
+                        setJntoDataList(fallbackData); setIsFallback(true);
                     } finally {
-                        setIsLoading(false);
+                        setIsJntoLoading(false);
                     }
                 };
 
-                fetchAllData();
+                // Park
+                const fetchPark = async () => {
+                    try {
+                        const [rawVisitors, rawForeign] = await Promise.all([
+                            fetchCSV(URL_VISITORS), fetchCSV(URL_FOREIGN)
+                        ]);
+                        if(rawVisitors.length > 0){
+                            setParkData(processParkData(rawVisitors, rawForeign));
+                        } else {
+                            setParkError('スプレッドシートからデータが取得できませんでした。');
+                        }
+                    } catch (e) {
+                        setParkError('データ取得エラーが発生しました。');
+                    } finally {
+                        setIsParkLoading(false);
+                    }
+                };
+
+                fetchJNTO();
+                fetchPark();
             }, []);
 
-            const [activeTab, setActiveTab] = React.useState('overview');
-            const [selectedMonth, setSelectedMonth] = React.useState('');
-            const [selectedMarket, setSelectedMarket] = React.useState('');
-
-            const sortedDataList = React.useMemo(() => {
-                if (rawDataList.length === 0) return [];
-                return [...rawDataList].sort((a, b) => {
-                    return (b.report.data_year * 100 + b.report.data_month_number) - (a.report.data_year * 100 + a.report.data_month_number);
-                });
-            }, [rawDataList]);
-
+            // JNTO ロジック
+            const sortedJntoList = React.useMemo(() => [...jntoDataList].sort((a, b) => (b.report.data_year * 100 + b.report.data_month_number) - (a.report.data_year * 100 + a.report.data_month_number)), [jntoDataList]);
             React.useEffect(() => {
-                if (sortedDataList.length > 0 && !selectedMonth) {
-                    const latestMonthKey = `${sortedDataList[0].report.data_year}-${sortedDataList[0].report.data_month_number}`;
-                    setSelectedMonth(latestMonthKey);
-                }
-            }, [sortedDataList, selectedMonth]);
+                if (sortedJntoList.length > 0 && !selectedMonth) setSelectedMonth(`${sortedJntoList[0].report.data_year}-${sortedJntoList[0].report.data_month_number}`);
+            }, [sortedJntoList, selectedMonth]);
 
-            const currentData = React.useMemo(() => {
-                if (sortedDataList.length === 0) return null;
-                return rawDataList.find(d => `${d.report.data_year}-${d.report.data_month_number}` === selectedMonth) || sortedDataList[0];
-            }, [rawDataList, sortedDataList, selectedMonth]);
-
-            const sortedMarkets = React.useMemo(() => {
-                if (!currentData) return [];
-                return [...currentData.markets].sort((a, b) => 
-                    b.visitor_arrivals.month.current_value - a.visitor_arrivals.month.current_value
-                );
-            }, [currentData]);
+            const currentJnto = React.useMemo(() => jntoDataList.find(d => `${d.report.data_year}-${d.report.data_month_number}` === selectedMonth) || sortedJntoList[0], [jntoDataList, sortedJntoList, selectedMonth]);
+            const sortedMarkets = React.useMemo(() => currentJnto ? [...currentJnto.markets].sort((a, b) => b.visitor_arrivals.month.current_value - a.visitor_arrivals.month.current_value) : [], [currentJnto]);
 
             React.useEffect(() => {
                 if (sortedMarkets.length > 0) {
-                    if (!selectedMarket || !sortedMarkets.find(m => m.market_key === selectedMarket)) {
-                        setSelectedMarket(sortedMarkets[0].market_key);
-                    }
+                    if (!selectedMarket || !sortedMarkets.find(m => m.market_key === selectedMarket)) setSelectedMarket(sortedMarkets[0].market_key);
                 }
             }, [selectedMonth, sortedMarkets, selectedMarket]);
 
-            if (isLoading) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--tifo-bg)]">
-                        <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mb-4"></div>
-                        <div className="text-teal-700 font-bold animate-pulse">データを読み込んでいます...</div>
-                        <div className="text-xs text-slate-400 mt-2">./data/ フォルダを探索中</div>
-                    </div>
-                );
-            }
-
-            if (!currentData) return <div>データがありません</div>;
 
             const handleGoToAnalysis = (marketKey) => {
                 setSelectedMarket(marketKey);
@@ -808,75 +1194,97 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
+            const isJntoTab = activeTab === 'overview' || activeTab === 'analysis';
+
             return (
                 <div className="max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans min-h-screen flex flex-col">
                     <header className="mb-6 flex-shrink-0">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                             <div>
                                 <h1 className="text-2xl md:text-3xl font-bold text-[var(--tifo-text)] tracking-tight">
-                                    Milli for Inbound (ティフォっち)
+                                    Milli for Inbound
                                 </h1>
-                                {isFallback && (
+                                {isJntoTab && isFallback && (
                                     <span className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded border border-slate-200 mt-2 font-bold">
                                         ⚠️ ローカルファイル未検出のためサンプルデータを表示中
                                     </span>
                                 )}
                             </div>
                             
-                            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-                                <span className="text-sm font-bold text-slate-600">表示対象月:</span>
-                                <select 
-                                    value={selectedMonth}
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                    className="border border-slate-200 rounded font-bold text-teal-700 bg-slate-50 p-1 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
-                                >
-                                    {sortedDataList.map(d => (
-                                        <option key={`${d.report.data_year}-${d.report.data_month_number}`} value={`${d.report.data_year}-${d.report.data_month_number}`}>
-                                            {d.report.data_year}年{d.report.data_month_number}月
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {isJntoTab && !isJntoLoading && (
+                                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm animate-fade-in">
+                                    <span className="text-sm font-bold text-slate-600">表示対象月:</span>
+                                    <select 
+                                        value={selectedMonth}
+                                        onChange={(e) => setSelectedMonth(e.target.value)}
+                                        className="border border-slate-200 rounded font-bold text-teal-700 bg-slate-50 p-1 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
+                                    >
+                                        {sortedJntoList.map(d => (
+                                            <option key={`${d.report.data_year}-${d.report.data_month_number}`} value={`${d.report.data_year}-${d.report.data_month_number}`}>
+                                                {d.report.data_year}年{d.report.data_month_number}月
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                     </header>
                     
-                    <div className="flex border-b border-slate-200 mb-6 flex-shrink-0">
-                        <button 
-                            className={`feedback-tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('overview')}
-                        >
-                            <Icons.BarChart /> サマリー
+                    <div className="flex border-b border-slate-200 mb-6 flex-shrink-0 overflow-x-auto custom-scrollbar">
+                        <button className={`feedback-tab-button ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+                            <Icons.BarChart /> 訪日外客数 サマリー
                         </button>
-                        <button 
-                            className={`feedback-tab-button ${activeTab === 'analysis' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('analysis')}
-                        >
+                        <button className={`feedback-tab-button ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => setActiveTab('analysis')}>
                             <Icons.Map /> 国・地域別の要因分析
+                        </button>
+                        <button className={`feedback-tab-button ${activeTab === 'kenrokuen' ? 'active' : ''}`} onClick={() => setActiveTab('kenrokuen')}>
+                            <i className="fa-solid fa-tree"></i> 兼六園
+                        </button>
+                        <button className={`feedback-tab-button ${activeTab === 'kanazawa' ? 'active' : ''}`} onClick={() => setActiveTab('kanazawa')}>
+                            <i className="fa-solid fa-chess-rook"></i> 金沢城公園
                         </button>
                     </div>
 
                     <div className="flex-1">
-                        {activeTab === 'overview' && (
-                            <OverviewTab 
-                                data={currentData} 
-                                markets={sortedMarkets} 
-                                onSelectMarket={handleGoToAnalysis} 
-                            />
+                        {/* JNTOコンテンツ */}
+                        {isJntoTab && (
+                            isJntoLoading ? (
+                                <div className="py-20 flex flex-col items-center justify-center">
+                                    <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mb-4"></div>
+                                    <div className="text-teal-700 font-bold animate-pulse">データを読み込んでいます...</div>
+                                </div>
+                            ) : currentJnto ? (
+                                <>
+                                    {activeTab === 'overview' && <OverviewTab data={currentJnto} markets={sortedMarkets} onSelectMarket={handleGoToAnalysis} />}
+                                    {activeTab === 'analysis' && <MarketAnalysisTab markets={sortedMarkets} selectedMarket={selectedMarket} onSelectMarket={setSelectedMarket} rawDataList={jntoDataList} />}
+                                </>
+                            ) : <div>データがありません</div>
                         )}
-                        {activeTab === 'analysis' && (
-                            <MarketAnalysisTab 
-                                markets={sortedMarkets} 
-                                selectedMarket={selectedMarket}
-                                onSelectMarket={setSelectedMarket}
-                                rawDataList={rawDataList}
-                            />
+
+                        {/* Parkコンテンツ */}
+                        {!isJntoTab && (
+                            isParkLoading ? (
+                                <div className="py-20 flex flex-col items-center justify-center">
+                                    <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mb-4"></div>
+                                    <div className="text-teal-700 font-bold animate-pulse">スプレッドシートからデータを取得中...</div>
+                                </div>
+                            ) : parkError ? (
+                                <div className="py-20 text-center text-red-500 font-bold"><i className="fa-solid fa-circle-exclamation mr-2"></i>{parkError}</div>
+                            ) : (
+                                <ParkDashboard parkType={activeTab} parkData={parkData} />
+                            )
                         )}
                     </div>
 
                     <div className="mt-12 pt-6 border-t border-slate-200 text-right">
                         <p className="text-sm text-slate-500 font-medium">
-                            出典: {currentData.report.source_name_ja}
+                            出典: {isJntoTab ? (currentJnto?.report?.source_name_ja || '日本政府観光局（JNTO）') : '石川県（兼六園・金沢城公園入園者数）'}
                         </p>
+                        {!isJntoTab && (
+                            <a href="https://docs.google.com/spreadsheets/d/1HdaqmIPXDChGrc2XynYPtzkDRIIBQObh41GS9T4ohlo/edit" target="_blank" className="text-xs text-slate-400 hover:text-teal-600 underline inline-flex items-center gap-1 mt-2">
+                                <i className="fa-solid fa-arrow-up-right-from-square"></i> 元データ (Google Spreadsheet)
+                            </a>
+                        )}
                     </div>
                 </div>
             );
