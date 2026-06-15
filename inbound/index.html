@@ -1,1 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milli for Inbound</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --tifo-bg: #F7FAFC;
+            --tifo-text: #2D3748;
+            --tifo-primary: #4FD1C5;
+            --tifo-primary-dark: #38B2AC;
+            --tifo-card-border: #E2E8F0;
+            --tifo-card-bg: #FFFFFF;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--tifo-bg);
+            color: var(--tifo-text);
+        }
+        .tifo-card {
+            background-color: var(--tifo-card-bg);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--tifo-card-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .rank-badge {
+            width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex;
+            align-items: center; justify-content: center; font-weight: bold; color: white;
+            flex-shrink: 0;
+        }
+        .rank-1 { background-color: #4FD1C5; } /* TIFOカラーに合わせて1位をエメラルドグリーンに */
+        .rank-2 { background-color: #CBD5E0; }
+        .rank-3 { background-color: #A0AEC0; }
+        .rank-default { background-color: #E2E8F0; color: #4A5568; }
+        
+        .feedback-tab-button {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #A0AEC0;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .feedback-tab-button:hover {
+            background-color: #F7FAFC;
+            color: #4A5568;
+        }
+        .feedback-tab-button.active {
+            color: var(--tifo-primary-dark);
+            border-bottom-color: var(--tifo-primary);
+        }
 
+        /* 横スクロールバーのカスタマイズ (細くて目立たないが操作可能) */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #A0AEC0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // データフェッチ失敗時用のフォールバックデータ（2026年4月と3月の一部データをサンプルとして内包）
+        const fallbackData = [
+            {
+                "report": { "source_name_ja": "日本政府観光局（JNTO）", "report_title_ja": "訪日外客数（2026年4月推計値）", "data_year": 2026, "data_month_number": 4 },
+                "overall": {
+                    "visitor_arrivals": { "month": { "current_value": 3692200, "change_pct_vs_comparison_year": -5.5 } },
+                    "headline_summary_ja": "2026年4月の訪日外国人観光客数は3,692,200人で、前年同月比5.5%減となったものの、2026年の単月としては最高を記録し、2年連続で4月までの累計が1,400万人を超えた。",
+                    "overall_context_ja": [
+                        "イースター休暇の期ずれにより、欧州を中心に訪日需要が3月下旬と4月上旬に分散した。",
+                        "桜シーズンに合わせた訪日需要の高まりもあり、東アジアでは韓国、東南アジアではベトナム、欧米豪では米国などで外国人観光客数が増加した。"
+                    ]
+                },
+                "markets": [
+                    { "market_key": "KR", "name_ja": "韓国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 878600, "change_pct_vs_comparison_year": 21.7 } }, "record": { "month_record": true, "record_note_ja": "4月として過去最高" }, "market_context": { "status_summary_ja": "継続する訪日旅行人気に加え、釜山～下地島間の新規就航や増便の影響等もあり、過去最高を記録した。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "aviation_updates_ja": [ "釜山～下地島間の新規就航", "仁川～成田間などの増便" ], "demand_events_ja": [] }, "dashboard_tags": [ "strong_growth", "record_high" ] },
+                    { "market_key": "CN", "name_ja": "中国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 330700, "change_pct_vs_comparison_year": -56.8 } }, "record": {}, "market_context": { "status_summary_ja": "訪日需要が落ち着く時期であることに加え、中国政府より日本への渡航を避けるよう注意喚起があり、航空便の減便の影響等もあった。", "positive_drivers_ja": [], "constraints_ja": [ "中国政府より日本への渡航を避けるよう注意喚起" ], "aviation_updates_ja": [ "航空便の減便" ], "demand_events_ja": [] }, "dashboard_tags": [ "severe_decline" ] },
+                    { "market_key": "TW", "name_ja": "台湾", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 643500, "change_pct_vs_comparison_year": 19.7 } }, "record": { "month_record": true, "record_note_ja": "4月として過去最高" }, "market_context": { "status_summary_ja": "継続する訪日旅行人気に加え、チャーター便運航や4連休の影響等もあり、過去最高を記録した。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "aviation_updates_ja": [ "チャーター便の運航", "増便" ], "demand_events_ja": [ "4連休" ] }, "dashboard_tags": [ "moderate_growth" ] },
+                    { "market_key": "US", "name_ja": "米国", "region_ja": "北米", "visitor_arrivals": { "month": { "current_value": 330000, "change_pct_vs_comparison_year": 0.8 } }, "record": { "month_record": true, "record_note_ja": "4月として過去最高" }, "market_context": { "status_summary_ja": "イースター休暇の期ずれによる需要の分散はあったが、継続する人気により過去最高を記録。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "demand_events_ja": [ "イースター休暇の期ずれ" ], "aviation_updates_ja": [] }, "dashboard_tags": [ "moderate_growth", "record_high" ] }
+                ]
+            },
+            {
+                "report": { "source_name_ja": "日本政府観光局（JNTO）", "report_title_ja": "訪日外客数（2026年3月推計値）", "data_year": 2026, "data_month_number": 3 },
+                "overall": {
+                    "visitor_arrivals": { "month": { "current_value": 3618900, "change_pct_vs_comparison_year": 3.5 } },
+                    "headline_summary_ja": "2026年3月の訪日外国人観光客数は3,618,900人で、前年同月比3.5%増となり、3月として過去最高を更新した。",
+                    "overall_context_ja": [
+                        "例年3月下旬ごろから桜シーズンを迎えることに加え、4月のイースターに合わせたスクールホリデーによる訪日需要の高まりが見られた。"
+                    ]
+                },
+                "markets": [
+                    { "market_key": "KR", "name_ja": "韓国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 795600, "change_pct_vs_comparison_year": 15.0 } }, "record": { "month_record": true, "record_note_ja": "3月として過去最高" }, "market_context": { "status_summary_ja": "継続する訪日旅行人気と増便により好調を維持。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "aviation_updates_ja": [ "釜山～静岡間の新規就航" ], "demand_events_ja": [] }, "dashboard_tags": [ "moderate_growth" ] },
+                    { "market_key": "CN", "name_ja": "中国", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 291600, "change_pct_vs_comparison_year": -55.9 } }, "record": {}, "market_context": { "status_summary_ja": "減便および渡航注意喚起により減少。", "positive_drivers_ja": [], "constraints_ja": [ "渡航注意喚起" ], "aviation_updates_ja": [ "航空便の減便" ], "demand_events_ja": [] }, "dashboard_tags": [ "severe_decline" ] },
+                    { "market_key": "TW", "name_ja": "台湾", "region_ja": "東アジア", "visitor_arrivals": { "month": { "current_value": 653300, "change_pct_vs_comparison_year": 24.9 } }, "record": { "month_record": true, "record_note_ja": "3月として過去最高" }, "market_context": { "status_summary_ja": "スポーツイベントの開催や増便により好調。", "positive_drivers_ja": [ "スポーツイベント開催" ], "constraints_ja": [], "aviation_updates_ja": [ "増便" ], "demand_events_ja": [] }, "dashboard_tags": [ "strong_growth" ] },
+                    { "market_key": "US", "name_ja": "米国", "region_ja": "北米", "visitor_arrivals": { "month": { "current_value": 375900, "change_pct_vs_comparison_year": 9.7 } }, "record": { "all_time_monthly_record": true, "record_note_ja": "単月として過去最高" }, "market_context": { "status_summary_ja": "スクールホリデーと継続する人気により単月過去最高。", "positive_drivers_ja": [ "継続する訪日旅行人気" ], "constraints_ja": [], "demand_events_ja": [ "スクールホリデー" ], "aviation_updates_ja": [] }, "dashboard_tags": [ "moderate_growth", "all_time_record_high" ] }
+                ]
+            }
+        ];
+
+        // UI用アイコン
+        const Icons = {
+            TrendingUp: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>,
+            TrendingDown: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>,
+            Calendar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>,
+            Plane: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>,
+            Trophy: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>,
+            BarChart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>,
+            Map: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+        };
+
+        const tagStyles = {
+            "strong_growth": { label: "大幅増", style: "bg-teal-100 text-teal-800 border-teal-200" },
+            "moderate_growth": { label: "堅調増", style: "bg-slate-100 text-slate-700 border-slate-200" },
+            "decline": { label: "減少", style: "bg-slate-200 text-slate-600 border-slate-300" },
+            "severe_decline": { label: "大幅減", style: "bg-slate-300 text-slate-700 border-slate-400" },
+            "continued_japan_popularity": { label: "人気継続", style: "bg-teal-50 text-teal-700 border-teal-100" },
+            "new_route": { label: "新規就航", style: "bg-slate-100 text-slate-800 border-slate-200" },
+            "aviation_increase": { label: "増便", style: "bg-slate-100 text-slate-800 border-slate-200" },
+            "route_resumption": { label: "復便", style: "bg-slate-100 text-slate-800 border-slate-200" },
+            "seat_capacity_decline": { label: "座席減", style: "bg-slate-200 text-slate-700 border-slate-300" },
+            "holiday_effect": { label: "イベント効果", style: "bg-teal-50 text-teal-700 border-teal-100" },
+            "easter_shift": { label: "期ずれ", style: "bg-slate-100 text-slate-600 border-slate-200" },
+            "geopolitical_risk": { label: "地政学リスク", style: "bg-slate-200 text-slate-700 border-slate-300" },
+            "regulatory_constraint": { label: "規制影響", style: "bg-slate-300 text-slate-800 border-slate-400" },
+            "record_high": { label: "過去最高", style: "bg-teal-100 text-teal-800 border-teal-300" },
+            "april_record_high": { label: "4月過去最高", style: "bg-teal-100 text-teal-800 border-teal-300" },
+            "all_time_record_high": { label: "単月過去最高", style: "bg-teal-500 text-white border-teal-600 font-bold" }
+        };
+
+        const formatNumber = (num) => num ? num.toLocaleString() : "0";
+
+        const ChangeText = ({ change, reverseColor = false }) => {
+            if (change === null || change === undefined) return <span>-</span>;
+            const isPositive = change > 0;
+            const isNegative = change < 0;
+            // トンマナに合わせて赤/緑を強すぎない色(Teal系/Slate系)に変更
+            let colorClass = "text-slate-500";
+            if (isPositive) colorClass = reverseColor ? "text-slate-500" : "text-teal-600";
+            if (isNegative) colorClass = reverseColor ? "text-teal-600" : "text-slate-500";
+
+            return (
+                <span className={`font-bold flex items-center ${colorClass}`}>
+                    {isPositive ? "▲" : (isNegative ? "▼" : "")} {Math.abs(change).toFixed(1)}%
+                </span>
+            );
+        };
+
+        // --- ツールチップロジック ---
+        const getOrCreateTooltip = (chart) => {
+            let tooltipEl = chart.canvas.parentNode.querySelector('div');
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.style.background = 'rgba(255, 255, 255, 0.98)';
+                tooltipEl.style.borderRadius = '8px';
+                tooltipEl.style.color = '#2D3748';
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(-50%, 0)';
+                tooltipEl.style.transition = 'all .1s ease';
+                tooltipEl.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                tooltipEl.style.border = '1px solid #E2E8F0';
+                tooltipEl.style.zIndex = 100;
+                tooltipEl.style.minWidth = '220px';
+
+                const table = document.createElement('table');
+                table.style.margin = '0px';
+                table.style.width = '100%';
+
+                tooltipEl.appendChild(table);
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+            return tooltipEl;
+        };
+
+        const externalTooltipHandler = (context, marketKey, rawDataList) => {
+            const {chart, tooltip} = context;
+            const tooltipEl = getOrCreateTooltip(chart);
+
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+                
+                const label = titleLines[0];
+                const monthData = rawDataList.find(d => `${d.report.data_year}年${d.report.data_month_number}月` === label);
+                const marketData = monthData ? monthData.markets.find(m => m.market_key === marketKey) : null;
+                const ctxData = marketData ? marketData.market_context : {};
+
+                const tableRoot = tooltipEl.querySelector('table');
+                while (tableRoot.firstChild) {
+                    tableRoot.firstChild.remove();
+                }
+
+                const thead = document.createElement('thead');
+                titleLines.forEach(title => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderWidth = 0;
+                    const th = document.createElement('th');
+                    th.style.borderWidth = 0;
+                    th.style.textAlign = 'left';
+                    th.style.padding = '8px 12px';
+                    th.style.borderBottom = '1px solid #E2E8F0';
+                    th.style.fontSize = '14px';
+                    th.style.color = '#4A5568';
+                    const text = document.createTextNode(title);
+                    th.appendChild(text);
+                    tr.appendChild(th);
+                    thead.appendChild(tr);
+                });
+
+                const tbody = document.createElement('tbody');
+                
+                bodyLines.forEach((body, i) => {
+                    const colors = tooltip.labelColors[i];
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = 'inherit';
+                    tr.style.borderWidth = 0;
+
+                    const td = document.createElement('td');
+                    td.style.borderWidth = 0;
+                    td.style.padding = '8px 12px';
+                    
+                    const colorSquare = document.createElement('span');
+                    colorSquare.style.background = colors.backgroundColor;
+                    colorSquare.style.borderColor = colors.borderColor;
+                    colorSquare.style.borderWidth = '2px';
+                    colorSquare.style.marginRight = '8px';
+                    colorSquare.style.height = '12px';
+                    colorSquare.style.width = '12px';
+                    colorSquare.style.display = 'inline-block';
+                    colorSquare.style.borderRadius = '2px';
+
+                    // 人数という表現にする
+                    const rawVal = body[0].split(': ')[1] || body[0];
+                    const textNode = document.createTextNode(`人数: ${rawVal}`);
+
+                    td.appendChild(colorSquare);
+                    td.appendChild(textNode);
+                    td.style.fontWeight = 'bold';
+                    td.style.fontSize = '14px';
+                    
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                });
+
+                // トンマナに合わせたカラーの四角で要因を追加
+                if (ctxData) {
+                    const addContextItem = (items, labelStr, colorCode) => {
+                        if (items && items.length > 0) {
+                            const tr = document.createElement('tr');
+                            const td = document.createElement('td');
+                            td.style.padding = '4px 12px 8px 12px';
+                            td.style.fontSize = '12px';
+                            
+                            const labelNode = document.createElement('div');
+                            labelNode.style.display = 'flex';
+                            labelNode.style.alignItems = 'center';
+                            labelNode.style.color = '#4A5568';
+                            labelNode.style.fontWeight = 'bold';
+                            labelNode.style.marginBottom = '4px';
+
+                            const colorSquare = document.createElement('span');
+                            colorSquare.style.background = colorCode;
+                            colorSquare.style.marginRight = '6px';
+                            colorSquare.style.height = '10px';
+                            colorSquare.style.width = '10px';
+                            colorSquare.style.display = 'inline-block';
+                            colorSquare.style.borderRadius = '2px';
+
+                            labelNode.appendChild(colorSquare);
+                            labelNode.appendChild(document.createTextNode(labelStr));
+                            
+                            const ul = document.createElement('ul');
+                            ul.style.margin = '0';
+                            ul.style.paddingLeft = '16px';
+                            ul.style.color = '#718096';
+                            ul.style.listStyleType = 'disc';
+                            
+                            items.forEach(item => {
+                                const li = document.createElement('li');
+                                li.appendChild(document.createTextNode(item));
+                                li.style.marginBottom = '2px';
+                                ul.appendChild(li);
+                            });
+
+                            td.appendChild(labelNode);
+                            td.appendChild(ul);
+                            tr.appendChild(td);
+                            tbody.appendChild(tr);
+                        }
+                    };
+                    
+                    addContextItem(ctxData.positive_drivers_ja, '好調・増加要因', '#4FD1C5'); // Teal 400
+                    addContextItem(ctxData.constraints_ja, '懸念・減少要因', '#94A3B8'); // Slate 400
+                    addContextItem(ctxData.demand_events_ja, '季節イベント・休暇', '#99F6E4'); // Teal 200
+                    addContextItem(ctxData.aviation_updates_ja, '航空便の動向', '#E2E8F0'); // Slate 200
+                }
+
+                tableRoot.appendChild(thead);
+                tableRoot.appendChild(tbody);
+            }
+
+            const position = chart.canvas.getBoundingClientRect();
+            
+            // Tooltipを親要素（canvas）からの相対位置に配置
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.left = tooltip.caretX + 'px';
+            tooltipEl.style.top = tooltip.caretY + 'px';
+        };
+
+        // --- グラフコンポーネント (Chart.js) ---
+        const TrendChart = ({ marketKey, rawDataList }) => {
+            const chartRef = React.useRef(null);
+            const chartInstance = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!chartRef.current) return;
+                
+                const timeSeriesData = [...rawDataList]
+                    .sort((a, b) => {
+                        const dateA = new Date(a.report.data_year, a.report.data_month_number - 1);
+                        const dateB = new Date(b.report.data_year, b.report.data_month_number - 1);
+                        return dateA - dateB;
+                    })
+                    .map(d => {
+                        const m = d.markets.find(x => x.market_key === marketKey);
+                        return {
+                            label: `${d.report.data_year}年${d.report.data_month_number}月`,
+                            value: m ? m.visitor_arrivals.month.current_value : 0
+                        };
+                    });
+
+                const labels = timeSeriesData.map(d => d.label);
+                const data = timeSeriesData.map(d => d.value);
+
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '人数',
+                            data: data,
+                            borderColor: '#4FD1C5',
+                            backgroundColor: 'rgba(79, 209, 197, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.1,
+                            pointBackgroundColor: '#38B2AC',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBorderColor: '#FFF',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: false, // デフォルトのツールチップを無効化
+                                position: 'nearest',
+                                external: (context) => externalTooltipHandler(context, marketKey, rawDataList)
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: false, 
+                                ticks: { callback: function(value) { return value.toLocaleString(); }, color: '#718096' },
+                                grid: { color: '#F1F5F9' },
+                                border: { display: false }
+                            },
+                            x: {
+                                ticks: { color: '#718096' },
+                                grid: { display: false },
+                                border: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [marketKey, rawDataList]);
+
+            return (
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                    <h4 className="font-bold text-sm text-slate-700 mb-4 flex items-center">
+                        <Icons.TrendingUp /> <span className="ml-2">月次推移グラフ</span>
+                    </h4>
+                    <div className="h-72 relative">
+                        <canvas ref={chartRef}></canvas>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 過去の推移と背景テーブル ---
+        const HistoryTable = ({ marketKey, rawDataList }) => {
+            const historyData = [...rawDataList]
+                .sort((a, b) => {
+                    return (b.report.data_year * 100 + b.report.data_month_number) - (a.report.data_year * 100 + a.report.data_month_number);
+                })
+                .map(d => {
+                    const m = d.markets.find(x => x.market_key === marketKey);
+                    return {
+                        yearMonth: `${d.report.data_year}年${d.report.data_month_number}月`,
+                        value: m ? m.visitor_arrivals.month.current_value : null,
+                        change: m ? m.visitor_arrivals.month.change_pct_vs_comparison_year : null,
+                        summary: m && m.market_context ? m.market_context.status_summary_ja : '-'
+                    };
+                }).filter(d => d.value !== null);
+
+            if (historyData.length === 0) return null;
+
+            return (
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                    <h4 className="font-bold text-sm text-slate-700 mb-4 flex items-center">
+                        <Icons.Calendar /> <span className="ml-2">過去の推移と背景</span>
+                    </h4>
+                    <div className="overflow-x-auto custom-scrollbar pb-2">
+                        <table className="min-w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th className="py-3 px-4 rounded-tl-lg whitespace-nowrap">年月</th>
+                                    <th className="py-3 px-4 text-right whitespace-nowrap">人数</th>
+                                    <th className="py-3 px-4 text-right whitespace-nowrap">前年比</th>
+                                    <th className="py-3 px-4 rounded-tr-lg min-w-[300px]">総評・背景</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {historyData.map((row, idx) => (
+                                    <tr key={idx} className="hover:bg-teal-50 transition-colors">
+                                        <td className="py-3 px-4 font-bold text-slate-700 whitespace-nowrap">{row.yearMonth}</td>
+                                        <td className="py-3 px-4 text-right font-medium text-slate-800">{formatNumber(row.value)}</td>
+                                        <td className="py-3 px-4 text-right whitespace-nowrap"><ChangeText change={row.change} /></td>
+                                        <td className="py-3 px-4 text-slate-600 text-xs leading-relaxed">{row.summary}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        // 「サマリー」タブコンテンツ
+        const OverviewTab = ({ data, markets, onSelectMarket }) => (
+            <div className="space-y-6 animate-fade-in">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="tifo-card lg:col-span-1 bg-gradient-to-br from-white to-teal-50 border-teal-100 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-teal-100 opacity-50"></div>
+                        <h2 className="text-sm font-bold mb-2 text-slate-500 relative z-10">全体 外国人観光客数（{data.report.data_year}年{data.report.data_month_number}月）</h2>
+                        <div className="text-4xl font-bold text-[var(--tifo-primary-dark)] mb-2 relative z-10">
+                            {formatNumber(data.overall.visitor_arrivals.month.current_value)} <span className="text-lg text-slate-500">人</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm bg-white bg-opacity-80 py-2 px-3 rounded-lg w-max relative z-10 shadow-sm">
+                            <span className="text-slate-600 font-medium">前年同月比:</span>
+                            <ChangeText change={data.overall.visitor_arrivals.month.change_pct_vs_comparison_year} />
+                        </div>
+                    </div>
+                    <div className="tifo-card lg:col-span-2 border-l-4 border-l-[var(--tifo-primary)]">
+                        <h2 className="text-sm font-bold mb-3 text-[var(--tifo-primary-dark)]">概況ハイライト</h2>
+                        <p className="font-bold text-[1.1rem] mb-4 text-slate-800 leading-snug">{data.overall.headline_summary_ja}</p>
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm text-slate-600">
+                            {(data.overall.overall_context_ja || []).slice(0,4).map((ctx, i) => (
+                                <li key={i} className="flex items-start">
+                                    <span className="text-teal-400 mr-2 mt-0.5">•</span>
+                                    <span>{ctx}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="tifo-card">
+                    <h2 className="text-lg font-bold mb-4 flex items-center text-slate-800">
+                        <Icons.BarChart /> <span className="ml-2">国・地域別 ランキング</span>
+                        <span className="ml-auto text-xs font-normal text-slate-400">※行をクリックで詳細分析へ</span>
+                    </h2>
+                    <div className="overflow-x-auto custom-scrollbar pb-2">
+                        <table className="min-w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th className="py-3 px-4 rounded-tl-lg w-16 text-center">順位</th>
+                                    <th className="py-3 px-4">国・地域</th>
+                                    <th className="py-3 px-4 text-right">人数</th>
+                                    <th className="py-3 px-4 text-right w-28">前年比</th>
+                                    <th className="py-3 px-4 rounded-tr-lg">主要トレンド・要因</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {markets.map((market, index) => {
+                                    const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-default';
+                                    const tags = (market.dashboard_tags || []).slice(0, 3);
+                                    
+                                    return (
+                                        <tr 
+                                            key={market.market_key} 
+                                            className="hover:bg-teal-50 cursor-pointer transition-colors"
+                                            onClick={() => onSelectMarket(market.market_key)}
+                                        >
+                                            <td className="py-3 px-4 text-center">
+                                                <div className={`rank-badge ${rankClass} w-7 h-7 text-xs shadow-sm mx-auto`}>{index + 1}</div>
+                                            </td>
+                                            <td className="py-3 px-4 font-bold text-slate-800">{market.name_ja}</td>
+                                            <td className="py-3 px-4 text-right font-medium">{formatNumber(market.visitor_arrivals.month.current_value)}</td>
+                                            <td className="py-3 px-4 text-right">
+                                                <ChangeText change={market.visitor_arrivals.month.change_pct_vs_comparison_year} />
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {tags.map(tag => {
+                                                        const tInfo = tagStyles[tag] || { label: tag, style: "bg-slate-100 text-slate-600 border-slate-200" };
+                                                        return (
+                                                            <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${tInfo.style}`}>
+                                                                {tInfo.label}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 「国・地域別の要因分析」タブコンテンツ
+        const MarketAnalysisTab = ({ markets, selectedMarket, onSelectMarket, rawDataList }) => {
+            const market = markets.find(m => m.market_key === selectedMarket) || markets[0];
+            const ctx = market.market_context || {};
+
+            const AnalysisCard = ({ title, items, borderColorClass, dotColorClass }) => {
+                if (!items || items.length === 0) return null;
+                return (
+                    <div className={`p-4 rounded-xl border bg-white shadow-sm ${borderColorClass}`}>
+                        <h4 className="font-bold flex items-center mb-3 text-sm text-slate-700 border-b border-slate-100 pb-2">
+                            {title}
+                        </h4>
+                        <ul className="space-y-2">
+                            {items.map((item, idx) => (
+                                <li key={idx} className="text-sm text-slate-600 flex items-start leading-snug">
+                                    <span className={`${dotColorClass} mr-2 mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0`}></span>
+                                    <span>{item}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex flex-col gap-6 animate-fade-in">
+                    {/* スマホ向け横スクロールチップ（PCでも上部に配置し省スペース化） */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="text-xs font-bold text-slate-400 mb-2 px-1">分析対象国を選択:</div>
+                        <div className="flex flex-nowrap overflow-x-auto custom-scrollbar pb-3 gap-2">
+                            {markets.map((m) => (
+                                <button 
+                                    key={m.market_key}
+                                    onClick={() => onSelectMarket(m.market_key)}
+                                    className={`flex-shrink-0 px-4 py-2 rounded-full border transition-all font-bold text-sm ${selectedMarket === m.market_key ? 'bg-teal-400 text-white border-teal-500 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-teal-50 hover:border-teal-200'}`}
+                                >
+                                    {m.name_ja}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 詳細分析エリア */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                        <div className="flex flex-wrap justify-between items-start mb-6 gap-4">
+                            <div>
+                                <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-500 rounded border border-slate-200 mb-2 inline-block">
+                                    {market.region_ja}
+                                </span>
+                                <h2 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                                    {market.name_ja}
+                                </h2>
+                            </div>
+                            {market.record?.month_record && (
+                                <div className="bg-teal-50 text-teal-700 border border-teal-200 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center shadow-sm">
+                                    <div className="text-teal-500 mr-1.5"><Icons.Trophy /></div>
+                                    {market.record.record_note_ja}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-4 mb-6">
+                            <div className="bg-slate-50 rounded-lg p-4 flex-1 min-w-[150px] border border-slate-100">
+                                <div className="text-xs text-slate-500 mb-1 font-medium">当月 人数</div>
+                                <div className="text-2xl font-bold text-slate-800">{formatNumber(market.visitor_arrivals.month.current_value)}</div>
+                            </div>
+                            <div className="bg-slate-50 rounded-lg p-4 flex-1 min-w-[150px] border border-slate-100">
+                                <div className="text-xs text-slate-500 mb-1 font-medium">前年同月比</div>
+                                <div className="text-xl mt-1"><ChangeText change={market.visitor_arrivals.month.change_pct_vs_comparison_year} /></div>
+                            </div>
+                        </div>
+
+                        {ctx.status_summary_ja && (
+                            <div className="mb-6">
+                                <h3 className="font-bold text-sm text-slate-500 mb-2">総評</h3>
+                                <p className="text-slate-700 bg-slate-50 p-4 rounded-xl leading-relaxed text-sm border border-slate-100">
+                                    {ctx.status_summary_ja}
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <AnalysisCard 
+                                title="好調・増加要因" 
+                                items={ctx.positive_drivers_ja}
+                                borderColorClass="border-t-4 border-t-teal-400"
+                                dotColorClass="bg-teal-400"
+                            />
+                            <AnalysisCard 
+                                title="懸念・減少要因" 
+                                items={ctx.constraints_ja}
+                                borderColorClass="border-t-4 border-t-slate-400"
+                                dotColorClass="bg-slate-400"
+                            />
+                            <AnalysisCard 
+                                title="季節イベント・休暇" 
+                                items={ctx.demand_events_ja}
+                                borderColorClass="border-t-4 border-t-teal-200 bg-teal-50"
+                                dotColorClass="bg-teal-300"
+                            />
+                            <AnalysisCard 
+                                title="航空便の動向" 
+                                items={ctx.aviation_updates_ja}
+                                borderColorClass="border-t-4 border-t-slate-200"
+                                dotColorClass="bg-slate-300"
+                            />
+                        </div>
+
+                        <TrendChart marketKey={market.market_key} rawDataList={rawDataList} />
+                        <HistoryTable marketKey={market.market_key} rawDataList={rawDataList} />
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [rawDataList, setRawDataList] = React.useState([]);
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [isFallback, setIsFallback] = React.useState(false);
+            
+            // データの動的フェッチ（ディレクトリ内のファイルを予測して取得）
+            React.useEffect(() => {
+                const fetchAllData = async () => {
+                    const fetchedData = [];
+                    const startYear = 2024;
+                    const startMonth = 4;
+                    
+                    const today = new Date();
+                    const endYear = today.getFullYear();
+                    let endMonth = today.getMonth() + 2; 
+                    let actualEndYear = endYear;
+                    if (endMonth > 12) {
+                        endMonth -= 12;
+                        actualEndYear++;
+                    }
+
+                    const fetchPromises = [];
+
+                    for (let y = startYear; y <= actualEndYear; y++) {
+                        let mStart = (y === startYear) ? startMonth : 1;
+                        let mEnd = (y === actualEndYear) ? endMonth : 12;
+
+                        for (let m = mStart; m <= mEnd; m++) {
+                            const mm = m.toString().padStart(2, '0');
+                            const url = `./data/jnto_${y}${mm}.json`;
+                            
+                            fetchPromises.push(
+                                fetch(url)
+                                    .then(res => {
+                                        if (res.ok) return res.json();
+                                        return null;
+                                    })
+                                    .catch(e => null)
+                            );
+                        }
+                    }
+
+                    try {
+                        const results = await Promise.all(fetchPromises);
+                        results.forEach(res => {
+                            if (res && res.schema_version && res.report) {
+                                fetchedData.push(res);
+                            }
+                        });
+
+                        if (fetchedData.length > 0) {
+                            setRawDataList(fetchedData);
+                        } else {
+                            console.warn("./data/ からファイルを取得できませんでした。サンプルデータを表示します。");
+                            setRawDataList(fallbackData);
+                            setIsFallback(true);
+                        }
+                    } catch (err) {
+                        console.error("データ取得エラー:", err);
+                        setRawDataList(fallbackData);
+                        setIsFallback(true);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+
+                fetchAllData();
+            }, []);
+
+            const [activeTab, setActiveTab] = React.useState('overview');
+            const [selectedMonth, setSelectedMonth] = React.useState('');
+            const [selectedMarket, setSelectedMarket] = React.useState('');
+
+            const sortedDataList = React.useMemo(() => {
+                if (rawDataList.length === 0) return [];
+                return [...rawDataList].sort((a, b) => {
+                    return (b.report.data_year * 100 + b.report.data_month_number) - (a.report.data_year * 100 + a.report.data_month_number);
+                });
+            }, [rawDataList]);
+
+            React.useEffect(() => {
+                if (sortedDataList.length > 0 && !selectedMonth) {
+                    const latestMonthKey = `${sortedDataList[0].report.data_year}-${sortedDataList[0].report.data_month_number}`;
+                    setSelectedMonth(latestMonthKey);
+                }
+            }, [sortedDataList, selectedMonth]);
+
+            const currentData = React.useMemo(() => {
+                if (sortedDataList.length === 0) return null;
+                return rawDataList.find(d => `${d.report.data_year}-${d.report.data_month_number}` === selectedMonth) || sortedDataList[0];
+            }, [rawDataList, sortedDataList, selectedMonth]);
+
+            const sortedMarkets = React.useMemo(() => {
+                if (!currentData) return [];
+                return [...currentData.markets].sort((a, b) => 
+                    b.visitor_arrivals.month.current_value - a.visitor_arrivals.month.current_value
+                );
+            }, [currentData]);
+
+            React.useEffect(() => {
+                if (sortedMarkets.length > 0) {
+                    if (!selectedMarket || !sortedMarkets.find(m => m.market_key === selectedMarket)) {
+                        setSelectedMarket(sortedMarkets[0].market_key);
+                    }
+                }
+            }, [selectedMonth, sortedMarkets, selectedMarket]);
+
+            if (isLoading) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--tifo-bg)]">
+                        <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mb-4"></div>
+                        <div className="text-teal-700 font-bold animate-pulse">データを読み込んでいます...</div>
+                        <div className="text-xs text-slate-400 mt-2">./data/ フォルダを探索中</div>
+                    </div>
+                );
+            }
+
+            if (!currentData) return <div>データがありません</div>;
+
+            const handleGoToAnalysis = (marketKey) => {
+                setSelectedMarket(marketKey);
+                setActiveTab('analysis');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            return (
+                <div className="max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans min-h-screen flex flex-col">
+                    <header className="mb-6 flex-shrink-0">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold text-[var(--tifo-text)] tracking-tight">
+                                    Milli for Inbound (ティフォっち)
+                                </h1>
+                                {isFallback && (
+                                    <span className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded border border-slate-200 mt-2 font-bold">
+                                        ⚠️ ローカルファイル未検出のためサンプルデータを表示中
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                                <span className="text-sm font-bold text-slate-600">表示対象月:</span>
+                                <select 
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    className="border border-slate-200 rounded font-bold text-teal-700 bg-slate-50 p-1 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
+                                >
+                                    {sortedDataList.map(d => (
+                                        <option key={`${d.report.data_year}-${d.report.data_month_number}`} value={`${d.report.data_year}-${d.report.data_month_number}`}>
+                                            {d.report.data_year}年{d.report.data_month_number}月
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <div className="flex border-b border-slate-200 mb-6 flex-shrink-0">
+                        <button 
+                            className={`feedback-tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('overview')}
+                        >
+                            <Icons.BarChart /> サマリー
+                        </button>
+                        <button 
+                            className={`feedback-tab-button ${activeTab === 'analysis' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('analysis')}
+                        >
+                            <Icons.Map /> 国・地域別の要因分析
+                        </button>
+                    </div>
+
+                    <div className="flex-1">
+                        {activeTab === 'overview' && (
+                            <OverviewTab 
+                                data={currentData} 
+                                markets={sortedMarkets} 
+                                onSelectMarket={handleGoToAnalysis} 
+                            />
+                        )}
+                        {activeTab === 'analysis' && (
+                            <MarketAnalysisTab 
+                                markets={sortedMarkets} 
+                                selectedMarket={selectedMarket}
+                                onSelectMarket={setSelectedMarket}
+                                rawDataList={rawDataList}
+                            />
+                        )}
+                    </div>
+
+                    <div className="mt-12 pt-6 border-t border-slate-200 text-right">
+                        <p className="text-sm text-slate-500 font-medium">
+                            出典: {currentData.report.source_name_ja}
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
