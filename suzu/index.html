@@ -1,0 +1,861 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4FD1C5">
+  <meta name="description" content="Milliの道の駅すずなりデータから、珠洲との関係人口予備軍をペルソナ別に観測し、次の関わり方を検討するダッシュボードです。">
+  <title>珠洲との関係人口予備軍をMilliで観測する。</title>
+  <style>
+    :root {
+      --tifo-bg: #F7FAFC;
+      --tifo-text: #2D3748;
+      --tifo-muted: #718096;
+      --tifo-primary: #4FD1C5;
+      --tifo-primary-dark: #38B2AC;
+      --tifo-card-border: #E2E8F0;
+      --tifo-card-bg: #FFFFFF;
+      --tifo-soft-bg: #EDF2F7;
+      --tifo-green: #9AE6B4;
+      --tifo-red: #FEB2B2;
+      --tifo-yellow: #FFD700;
+      --tifo-shadow: 0 10px 15px -3px rgba(0,0,0,.05), 0 4px 6px -2px rgba(0,0,0,.05);
+      --tifo-shadow-hover: 0 18px 30px -8px rgba(79,209,197,.28);
+      --radius-xl: 1.5rem;
+      --font-sans: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", YuGothic, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(79,209,197,.20), transparent 28rem),
+        radial-gradient(circle at 92% 4%, rgba(154,230,180,.18), transparent 26rem),
+        var(--tifo-bg);
+      color: var(--tifo-text);
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible {
+      outline: 3px solid rgba(79,209,197,.55);
+      outline-offset: 3px;
+    }
+    a { color: var(--tifo-primary-dark); font-weight: 800; }
+    .app { width: min(1480px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+    .hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,255,255,.78));
+      border-radius: 2rem; padding: clamp(28px,5vw,60px); margin-bottom: 24px;
+      box-shadow: var(--tifo-shadow); border: 1px solid var(--tifo-card-border);
+    }
+    .hero::before { content:""; position:absolute; width:380px; height:380px; right:-140px; top:-160px; background:rgba(79,209,197,.15); border-radius:9999px; }
+    .hero::after { content:"SUZU"; position:absolute; right:clamp(20px,5vw,64px); bottom:-36px; color:rgba(79,209,197,.16); font-weight:900; font-size:clamp(68px,14vw,180px); line-height:1; letter-spacing:-.08em; }
+    .eyebrow { position:relative; z-index:1; display:inline-flex; align-items:center; gap:.65rem; padding:.45rem .85rem; border-radius:9999px; color:var(--tifo-primary-dark); background:rgba(79,209,197,.12); border:1px solid rgba(79,209,197,.28); font-size:.82rem; font-weight:800; }
+    .eyebrow::before { content:""; width:.55rem; height:.55rem; border-radius:9999px; background:var(--tifo-primary); box-shadow:0 0 0 5px rgba(79,209,197,.16); }
+    h1 { position:relative; z-index:1; font-size:clamp(2rem,5vw,4rem); line-height:1.14; letter-spacing:-.06em; margin:1rem 0; max-width:1040px; font-weight:900; }
+    .hero p { position:relative; z-index:1; max-width:980px; color:var(--tifo-muted); margin:0; font-size:clamp(.96rem,1.5vw,1.08rem); }
+    .toolbar { position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between; margin-top:1.75rem; }
+    .search-wrap { flex:1 1 320px; display:flex; align-items:center; gap:.65rem; padding:.75rem 1rem; border:1px solid var(--tifo-card-border); border-radius:9999px; background:white; }
+    .search-wrap span { color:var(--tifo-primary-dark); font-weight:800; }
+    .search-wrap input { width:100%; border:0; outline:none; background:transparent; color:var(--tifo-text); }
+    .toolbar-actions { display:flex; flex-wrap:wrap; gap:.8rem; }
+    .btn { background-color:var(--tifo-primary); color:white; font-weight:800; padding:.75rem 1.5rem; border-radius:9999px; border:0; border-bottom:4px solid var(--tifo-primary-dark); transition:all .2s ease; cursor:pointer; }
+    .btn:hover { transform:translateY(-2px); box-shadow:0 6px 12px -3px rgba(79,209,197,.4); }
+    .btn:active { transform:translateY(2px); border-bottom-width:2px; }
+    .btn.secondary { background:white; color:var(--tifo-text); border:1px solid var(--tifo-card-border); border-bottom:4px solid #CBD5E0; }
+    .btn.small { padding:.5rem .85rem; font-size:.78rem; border-bottom-width:3px; }
+    .layout { display:grid; grid-template-columns:minmax(280px,390px) 1fr; gap:24px; align-items:start; }
+    .panel { background:var(--tifo-card-bg); border-radius:var(--radius-xl); padding:1.5rem; box-shadow:var(--tifo-shadow); border:1px solid var(--tifo-card-border); }
+    .sidebar { position:sticky; top:18px; max-height:calc(100vh - 36px); overflow:auto; }
+    .sidebar h2, .section-title { line-height:1.25; letter-spacing:-.04em; font-weight:900; }
+    .sidebar h2 { font-size:1.1rem; margin:0 0 1rem; }
+    .persona-list { display:grid; gap:.85rem; }
+    .persona-card { width:100%; text-align:left; cursor:pointer; border:1px solid var(--tifo-card-border); border-radius:1.25rem; padding:1rem; background:white; transition:all .2s ease; color:inherit; box-shadow:0 4px 9px -5px rgba(0,0,0,.10); }
+    .persona-card:hover { transform:translateY(-2px); border-color:rgba(79,209,197,.70); box-shadow:var(--tifo-shadow-hover); }
+    .persona-card.active { background:linear-gradient(135deg,rgba(79,209,197,.16),rgba(154,230,180,.14)),white; border-color:var(--tifo-primary); box-shadow:0 12px 22px -12px rgba(56,178,172,.50); }
+    .persona-card .top { display:flex; justify-content:space-between; gap:.8rem; align-items:flex-start; margin-bottom:.7rem; }
+    .persona-card strong { display:block; font-size:.94rem; line-height:1.5; font-weight:850; }
+    .persona-card small { display:block; color:var(--tifo-muted); margin-top:.25rem; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; font-weight:900; font-size:.7rem; letter-spacing:.04em; padding:.28rem .55rem; border-radius:9999px; background:rgba(79,209,197,.18); color:var(--tifo-primary-dark); border:1px solid rgba(79,209,197,.34); }
+    .badge.medium { background:rgba(255,215,0,.18); color:#975A16; border-color:rgba(255,215,0,.44); }
+    .badge.low { background:rgba(254,178,178,.28); color:#C53030; border-color:rgba(254,178,178,.70); }
+    .badge.local { background:rgba(113,128,150,.12); color:#4A5568; border-color:#CBD5E0; }
+    .badge.exploratory { background:#F7FAFC; color:#718096; border-color:#CBD5E0; }
+    .mini-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:.65rem; }
+    .mini-meta div { border-radius:.9rem; background:#F7FAFC; padding:.55rem .35rem; text-align:center; border:1px solid var(--tifo-card-border); }
+    .mini-meta b { display:block; font-size:.95rem; line-height:1.1; }
+    .mini-meta span { display:block; font-size:.66rem; color:var(--tifo-muted); }
+    main { display:grid; gap:24px; }
+    .summary-panel { margin-bottom:24px; }
+    .summary-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:.8rem; }
+    .kpi { border:1px solid var(--tifo-card-border); border-radius:1.1rem; padding:.9rem; background:white; box-shadow:0 8px 14px -12px rgba(0,0,0,.20); }
+    .kpi span { color:var(--tifo-muted); font-size:.75rem; display:block; line-height:1.35; font-weight:700; }
+    .kpi b { display:block; margin-top:.35rem; font-size:clamp(1.05rem,2vw,1.65rem); letter-spacing:-.04em; line-height:1.1; font-weight:900; }
+    .summary-note { margin:.45rem 0 1rem; color:var(--tifo-muted); font-size:.88rem; }
+    .method-box { margin-top:1rem; border:1px solid var(--tifo-card-border); border-radius:1rem; background:#F7FAFC; overflow:hidden; }
+    .method-box summary { cursor:pointer; list-style:none; font-weight:850; padding:.8rem 1rem; color:#4A5568; }
+    .method-box summary::-webkit-details-marker { display:none; }
+    .method-box summary::after { content:"＋"; float:right; color:var(--tifo-primary-dark); }
+    .method-box[open] summary::after { content:"−"; }
+    .method-content { padding:0 1rem 1rem; color:#4A5568; font-size:.86rem; }
+    .method-content ul { margin:.5rem 0 0; padding-left:1.2rem; }
+    .relationship-map { margin-bottom:24px; }
+    .relationship-map > summary { list-style:none; cursor:pointer; }
+    .relationship-map > summary::-webkit-details-marker { display:none; }
+    .relationship-intro { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0; }
+    .relationship-map[open] .relationship-intro { margin-bottom:1rem; }
+    .relationship-intro .section-sub { margin:0; max-width:860px; }
+    .relationship-toggle { display:flex; align-items:center; gap:.6rem; flex:none; }
+    .accordion-icon { width:2rem; height:2rem; border-radius:9999px; display:grid; place-items:center; background:rgba(79,209,197,.14); border:1px solid rgba(79,209,197,.34); color:var(--tifo-primary-dark); font-weight:900; }
+    .accordion-icon::before { content:"＋"; }
+    .relationship-map[open] .accordion-icon::before { content:"−"; }
+    .relationship-scroll { overflow:auto; border:1px solid var(--tifo-card-border); border-radius:1.15rem; }
+    .relationship-table { width:100%; min-width:820px; border-collapse:collapse; background:white; font-size:.82rem; }
+    .relationship-table th, .relationship-table td { padding:.8rem .85rem; border-bottom:1px solid var(--tifo-card-border); vertical-align:top; text-align:left; }
+    .relationship-table tr:last-child td { border-bottom:0; }
+    .relationship-table th { position:sticky; top:0; z-index:1; background:#EDF2F7; color:#4A5568; font-weight:900; }
+    .relationship-table td:first-child { width:12rem; color:var(--tifo-primary-dark); font-weight:900; background:rgba(79,209,197,.06); }
+    .relationship-table td:nth-child(2) { width:48%; }
+    .relationship-table td:last-child { width:38%; }
+    .persona-links { display:flex; flex-wrap:wrap; gap:.35rem; }
+    .persona-link { border:1px solid rgba(79,209,197,.4); background:rgba(79,209,197,.1); color:var(--tifo-primary-dark); border-radius:9999px; padding:.35rem .55rem; font-weight:850; font-size:.7rem; cursor:pointer; text-align:left; }
+    .persona-link:hover { background:var(--tifo-primary); color:white; }
+    .persona-head { overflow:hidden; position:relative; background:radial-gradient(circle at 92% 0%, rgba(79,209,197,.18), transparent 24rem), white; }
+    .persona-head::before { content:""; position:absolute; inset:0; background-image:linear-gradient(90deg,rgba(226,232,240,.50) 1px,transparent 1px),linear-gradient(rgba(226,232,240,.45) 1px,transparent 1px); background-size:32px 32px; mask-image:linear-gradient(to bottom,rgba(0,0,0,.28),transparent 75%); pointer-events:none; }
+    .persona-head > * { position:relative; }
+    .persona-head-grid { display:grid; grid-template-columns:1fr auto; gap:1.5rem; align-items:start; }
+    .persona-title { margin:0; font-size:clamp(1.7rem,4vw,3rem); letter-spacing:-.065em; line-height:1.18; font-weight:900; }
+    .nickname { color:var(--tifo-primary-dark); font-weight:900; margin-top:.5rem; }
+    .narrative { margin:1rem 0 0; color:#4A5568; max-width:960px; }
+    .confidence-box { min-width:190px; border:1px solid var(--tifo-card-border); border-radius:1.25rem; background:rgba(247,250,252,.88); padding:1rem; }
+    .confidence-box .num { font-size:2.2rem; line-height:1; font-weight:900; letter-spacing:-.06em; color:var(--tifo-primary-dark); }
+    .confidence-box .label { color:var(--tifo-muted); font-size:.82rem; margin-top:.3rem; }
+    .kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:.8rem; margin-top:1.5rem; }
+    .grid-2 { display:grid; grid-template-columns:minmax(360px,.9fr) 1.1fr; gap:24px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+    .section-title { font-size:1.45rem; margin:0 0 1rem; }
+    .section-sub { color:var(--tifo-muted); margin:-.55rem 0 1rem; font-size:.9rem; }
+    .chart-wrap { display:grid; place-items:center; padding:.25rem 0 0; min-height:390px; }
+    #radarChart { width:min(100%,520px); height:auto; display:block; }
+    .radar-values { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:.45rem; margin-top:.45rem; }
+    .radar-values div { border:1px solid var(--tifo-card-border); border-radius:.75rem; padding:.35rem .5rem; text-align:center; background:#F7FAFC; }
+    .radar-values span { display:block; color:var(--tifo-muted); font-size:.68rem; }
+    .radar-values b { font-size:.85rem; }
+    .bar-list { display:grid; gap:.85rem; }
+    .bar-row { display:grid; gap:.38rem; }
+    .bar-label { display:flex; justify-content:space-between; gap:1rem; font-size:.9rem; }
+    .bar-label b { font-weight:850; }
+    .bar-track { background:#EDF2F7; border-radius:9999px; overflow:hidden; height:1.25rem; }
+    .bar-fill { background:var(--tifo-primary); height:100%; border-radius:9999px; transition:width .5s ease-in-out; }
+    .profile-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.8rem; }
+    .profile-item { border:1px solid var(--tifo-card-border); border-radius:1rem; padding:.9rem; background:#F7FAFC; }
+    .profile-item span { display:block; color:var(--tifo-muted); font-size:.74rem; margin-bottom:.25rem; font-weight:800; }
+    .profile-item b { display:block; font-weight:800; line-height:1.55; }
+    .tag-list { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .tag { padding:.45rem .7rem; border-radius:9999px; background:rgba(79,209,197,.13); border:1px solid rgba(79,209,197,.30); color:var(--tifo-primary-dark); font-weight:850; font-size:.78rem; }
+    .quote { border-left:5px solid var(--tifo-primary); padding:.8rem 0 .8rem 1rem; color:#4A5568; background:linear-gradient(90deg,rgba(79,209,197,.10),transparent); border-radius:0 1rem 1rem 0; }
+    .quote + .quote { margin-top:.75rem; }
+    .tabs { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.9rem; }
+    .tab { padding:.5rem .75rem; border:0; border-bottom:3px solid transparent; font-weight:800; color:#A0AEC0; transition:all .2s ease; background:transparent; cursor:pointer; border-radius:.75rem .75rem 0 0; }
+    .tab:hover { background:#F7FAFC; color:#4A5568; }
+    .tab.active { color:var(--tifo-primary-dark); border-bottom-color:var(--tifo-primary); background:#F7FAFC; }
+    .list-block { display:grid; gap:.7rem; margin:0; padding:0; list-style:none; }
+    .list-block li { position:relative; padding:.8rem .9rem .8rem 2.35rem; border:1px solid var(--tifo-card-border); border-radius:1rem; background:#F7FAFC; }
+    .list-block li::before { content:""; position:absolute; left:1rem; top:1.45rem; width:.5rem; height:.5rem; border-radius:9999px; background:var(--tifo-primary); }
+    .always-table { width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid var(--tifo-card-border); border-radius:1rem; background:white; font-size:.9rem; }
+    .always-table th, .always-table td { padding:.85rem .95rem; border-bottom:1px solid var(--tifo-card-border); vertical-align:top; text-align:left; }
+    .always-table tr:last-child th, .always-table tr:last-child td { border-bottom:0; }
+    .always-table th { width:8rem; color:var(--tifo-primary-dark); background:#F7FAFC; font-weight:900; white-space:nowrap; }
+    .always-table ul { margin:0; padding-left:1.15rem; }
+    .always-table li { margin:0 0 .35rem; }
+    .always-table li:last-child { margin-bottom:0; }
+    .action-list { display:grid; gap:.85rem; }
+    .action-card { display:grid; grid-template-columns:2.2rem 1fr auto; gap:.9rem; align-items:start; border:1px solid var(--tifo-card-border); border-radius:1rem; padding:1rem; background:#F7FAFC; }
+    .action-num { width:2.2rem; height:2.2rem; border-radius:9999px; display:grid; place-items:center; color:white; background:var(--tifo-primary); font-weight:900; }
+    .action-card strong { display:block; line-height:1.5; }
+    .action-card p { margin:.3rem 0 0; color:#4A5568; font-size:.86rem; }
+    .action-card small { display:block; margin-top:.25rem; color:var(--tifo-muted); }
+    .effort { border-radius:9999px; padding:.3rem .55rem; font-size:.68rem; font-weight:900; background:white; border:1px solid var(--tifo-card-border); white-space:nowrap; color:#4A5568; }
+    .drive-strategy[hidden] { display:none; }
+    .drive-message { position:relative; overflow:hidden; padding:1.35rem; border-radius:1.25rem; background:linear-gradient(135deg,#2D3748,#285E61); color:white; margin-bottom:1rem; }
+    .drive-message::after { content:"MY CAR"; position:absolute; right:-.35rem; bottom:-1rem; color:rgba(255,255,255,.08); font-size:4.6rem; font-weight:900; line-height:1; letter-spacing:-.08em; }
+    .drive-message > * { position:relative; z-index:1; }
+    .drive-message small { color:#9AE6B4; font-weight:900; letter-spacing:.08em; }
+    .drive-message h3 { margin:.25rem 0 .45rem; font-size:clamp(1.45rem,3vw,2.35rem); line-height:1.2; letter-spacing:-.04em; }
+    .drive-message p { margin:0; max-width:920px; color:#E6FFFA; }
+    .drive-idea-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.85rem; }
+    .drive-idea { border:1px solid var(--tifo-card-border); border-top:4px solid var(--tifo-primary); border-radius:1rem; padding:1.05rem; background:#F7FAFC; }
+    .drive-idea .idea-kicker { color:var(--tifo-primary-dark); font-weight:900; font-size:.72rem; letter-spacing:.06em; }
+    .drive-idea h3 { margin:.25rem 0 .4rem; font-size:1.15rem; line-height:1.35; }
+    .drive-idea p { margin:0; color:#4A5568; font-size:.82rem; }
+    .case-title { margin:1.25rem 0 .7rem; font-size:1rem; }
+    .case-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
+    .case-card { border:1px solid var(--tifo-card-border); border-radius:1rem; padding:.9rem; background:white; }
+    .case-card strong { display:block; color:var(--tifo-primary-dark); line-height:1.45; }
+    .case-card p { margin:.35rem 0 0; color:#4A5568; font-size:.78rem; }
+    .case-card a { display:inline-block; margin-top:.45rem; font-size:.72rem; }
+    .marketing-flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:.55rem; align-items:stretch; margin:1rem 0; }
+    .marketing-step { display:flex; flex-direction:column; justify-content:center; border:1px solid rgba(79,209,197,.35); border-radius:.9rem; padding:.8rem; background:rgba(79,209,197,.08); }
+    .marketing-step b { color:var(--tifo-primary-dark); }
+    .marketing-step span { color:#4A5568; font-size:.72rem; margin-top:.2rem; }
+    .marketing-arrow { display:grid; place-items:center; color:var(--tifo-primary-dark); font-size:1.35rem; font-weight:900; }
+    .community-cta { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:.55rem; padding:1rem; border-radius:1rem; border:1px solid var(--tifo-card-border); background:linear-gradient(135deg,rgba(79,209,197,.14),rgba(154,230,180,.12)); }
+    .community-cta p { margin:0; font-size:.78rem; color:#4A5568; }
+    .drive-sources { margin:.8rem 0 0; color:var(--tifo-muted); font-size:.7rem; }
+    .drive-sources a { font-weight:750; }
+    .comparison-scroll { overflow-x:auto; }
+    .comparison-table { width:100%; min-width:790px; border-collapse:separate; border-spacing:0 .55rem; }
+    .comparison-table th { text-align:left; color:var(--tifo-muted); font-size:.78rem; padding:.25rem .6rem; }
+    .comparison-table td { background:#F7FAFC; border-top:1px solid var(--tifo-card-border); border-bottom:1px solid var(--tifo-card-border); padding:.7rem .6rem; font-weight:700; }
+    .comparison-table tr[data-id] { cursor:pointer; }
+    .comparison-table tr[data-id]:hover td { background:rgba(79,209,197,.12); }
+    .comparison-table td:first-child { border-left:1px solid var(--tifo-card-border); border-radius:.9rem 0 0 .9rem; }
+    .comparison-table td:last-child { border-right:1px solid var(--tifo-card-border); border-radius:0 .9rem .9rem 0; }
+    .chat-panel { min-height:620px; display:grid; grid-template-rows:auto 1fr auto auto; overflow:hidden; padding:0; }
+    .chat-head { padding:1.2rem 1.4rem; border-bottom:1px solid var(--tifo-card-border); background:white; display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .chat-head h2 { margin:0; font-size:1.1rem; line-height:1.35; font-weight:900; }
+    .chat-head small { display:block; color:var(--tifo-muted); margin-top:.2rem; }
+    .chat-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .chat-messages { padding:1.4rem; display:flex; flex-direction:column; gap:.9rem; overflow:auto; max-height:500px; background:radial-gradient(circle at 10% 12%, rgba(79,209,197,.10), transparent 18rem), #F7FAFC; }
+    .msg { max-width:min(84%,780px); padding:.85rem 1rem; border-radius:1.15rem; border:1px solid var(--tifo-card-border); white-space:pre-wrap; box-shadow:0 8px 16px -14px rgba(0,0,0,.20); }
+    .msg.user { margin-left:auto; background:var(--tifo-primary); color:white; border-color:var(--tifo-primary-dark); border-bottom-right-radius:.35rem; font-weight:700; }
+    .msg.bot { margin-right:auto; background:white; color:var(--tifo-text); border-bottom-left-radius:.35rem; }
+    .quick-questions { display:flex; flex-wrap:wrap; gap:.5rem; padding:0 1.4rem 1rem; background:#F7FAFC; }
+    .quick { border:1px solid var(--tifo-card-border); background:white; color:var(--tifo-text); border-radius:9999px; padding:.5rem .75rem; font-size:.78rem; cursor:pointer; font-weight:850; transition:all .2s ease; }
+    .quick:hover { border-color:var(--tifo-primary); color:var(--tifo-primary-dark); transform:translateY(-1px); }
+    .chat-form { display:flex; gap:.65rem; padding:1rem; border-top:1px solid var(--tifo-card-border); background:white; }
+    .chat-form input { flex:1; min-width:0; border:1px solid var(--tifo-card-border); border-radius:9999px; padding:.78rem 1rem; background:white; outline:none; }
+    .chat-form input:focus { border-color:var(--tifo-primary); box-shadow:0 0 0 4px rgba(79,209,197,.16); }
+    .chat-form button { background:var(--tifo-primary); color:white; font-weight:900; padding:.75rem 1.25rem; border-radius:9999px; border:0; border-bottom:4px solid var(--tifo-primary-dark); cursor:pointer; }
+    .footer-note { color:var(--tifo-muted); font-size:.76rem; margin-top:.9rem; }
+    .source-footer { margin-top:24px; text-align:center; color:var(--tifo-muted); font-size:.78rem; }
+    .empty { padding:1.2rem; color:var(--tifo-muted); text-align:center; background:#F7FAFC; border-radius:1rem; border:1px solid var(--tifo-card-border); }
+    .modal-overlay { position:fixed; inset:0; background:rgba(45,55,72,.75); display:flex; align-items:center; justify-content:center; z-index:50; transition:opacity .3s ease; padding:1rem; }
+    .modal-overlay.hidden { opacity:0; pointer-events:none; }
+    .modal-content { background:white; padding:2rem; border-radius:1.5rem; max-width:90%; width:780px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04); }
+    .modal-head { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .modal-head h2 { margin:0; }
+    .modal-body { overflow-y:auto; min-height:0; }
+    .modal-content.wide { width:min(96vw,1380px); max-width:96vw; }
+    .community-table-wrap { overflow:auto; border:1px solid var(--tifo-card-border); border-radius:1rem; }
+    .community-table { width:100%; min-width:1540px; border-collapse:collapse; font-size:.75rem; }
+    .community-table th, .community-table td { padding:.7rem .75rem; border-bottom:1px solid var(--tifo-card-border); vertical-align:top; text-align:left; line-height:1.55; }
+    .community-table th { position:sticky; top:0; z-index:1; background:#EDF2F7; color:#4A5568; font-weight:900; }
+    .community-table tr:last-child td { border-bottom:0; }
+    .community-table td:first-child { min-width:190px; font-weight:900; color:var(--tifo-primary-dark); }
+    .status-chip { display:inline-block; border:1px solid rgba(79,209,197,.45); background:rgba(79,209,197,.13); color:var(--tifo-primary-dark); border-radius:9999px; padding:.2rem .45rem; font-weight:850; font-size:.66rem; }
+    .status-chip.limited { border-color:#CBD5E0; background:#F7FAFC; color:#4A5568; }
+    .status-chip.dormant { border-color:rgba(254,178,178,.8); background:rgba(254,178,178,.2); color:#C53030; }
+    .community-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:.65rem; margin:.8rem 0 1rem; }
+    .community-summary div { border:1px solid var(--tifo-card-border); border-radius:.9rem; background:#F7FAFC; padding:.8rem; }
+    .community-summary b { display:block; color:var(--tifo-primary-dark); }
+    .community-summary span { display:block; color:var(--tifo-muted); font-size:.72rem; }
+    .insight-answer { margin:1rem 0; padding:1rem; border-radius:1rem; background:linear-gradient(135deg,rgba(79,209,197,.16),rgba(154,230,180,.12)); border:1px solid rgba(79,209,197,.35); font-weight:850; }
+    .insight-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin:1rem 0; }
+    .insight-stat { border:1px solid var(--tifo-card-border); border-radius:1rem; padding:.9rem; background:#F7FAFC; }
+    .insight-stat b { display:block; font-size:1.45rem; }
+    .insight-stat span { color:var(--tifo-muted); font-size:.75rem; }
+    .custom-scrollbar::-webkit-scrollbar, .sidebar::-webkit-scrollbar, .chat-messages::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width:8px; height:8px; }
+    .custom-scrollbar::-webkit-scrollbar-track, .sidebar::-webkit-scrollbar-track, .chat-messages::-webkit-scrollbar-track, .modal-body::-webkit-scrollbar-track { background:#f1f1f1; border-radius:10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb, .chat-messages::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:10px; }
+    @media (max-width:1180px) {
+      .layout, .grid-2, .grid-3, .drive-idea-grid, .case-grid { grid-template-columns:1fr; }
+      .sidebar { position:static; max-height:none; }
+      .persona-list { grid-template-columns:repeat(2,1fr); }
+      .kpis, .summary-grid { grid-template-columns:repeat(3,1fr); }
+      .marketing-flow { grid-template-columns:1fr; }
+      .marketing-arrow { transform:rotate(90deg); }
+    }
+    @media (max-width:720px) {
+      .app { width:min(100% - 20px,1480px); padding-top:10px; }
+      .hero { border-radius:1.5rem; padding:1.5rem; }
+      .toolbar .btn, .toolbar-actions { width:100%; }
+      .toolbar-actions .btn { flex:1 1 100%; }
+      .persona-list { grid-template-columns:1fr; }
+      .persona-head-grid { grid-template-columns:1fr; }
+      .kpis, .summary-grid, .profile-grid { grid-template-columns:1fr 1fr; }
+      .chat-head { align-items:flex-start; flex-direction:column; }
+      .msg { max-width:94%; }
+      .action-card { grid-template-columns:2.2rem 1fr; }
+      .effort { grid-column:2; justify-self:start; }
+      .insight-grid { grid-template-columns:1fr; }
+      .relationship-intro { align-items:flex-start; flex-direction:column; }
+      .community-summary { grid-template-columns:1fr; }
+      .modal-content { max-width:100%; padding:1.25rem; }
+    }
+    @media (max-width:480px) {
+      .kpis, .summary-grid, .profile-grid, .radar-values { grid-template-columns:1fr; }
+      .panel { padding:1rem; }
+    }
+    @media print {
+      body { background:#fff; }
+      .toolbar, .sidebar, .chat-form, .quick-questions, .chat-actions, .btn, .method-box { display:none !important; }
+      .app { width:100%; padding:0; }
+      .hero, .panel { box-shadow:none; background:#fff; break-inside:avoid; }
+      .layout, .grid-2, .grid-3 { display:block; }
+      .panel { margin:0 0 14px; }
+      .chat-panel { min-height:0; }
+      .chat-messages { max-height:none; overflow:visible; }
+      #radarChart { max-width:420px; }
+      .source-footer { text-align:left; }
+      .relationship-map:not([open]) .relationship-content { display:block !important; }
+      @page { margin:12mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="eyebrow">道の駅すずなり 観光アンケート / Relationship Persona Dashboard</div>
+      <h1>珠洲との関係人口予備軍をMilliで観測する。</h1>
+      <p>Milliの「道の駅すずなり」震災後回答から、県外客が再訪・応援・縁・滞在を通じて、今後どのように珠洲と深く関われるかを読み解くダッシュボードです。</p>
+      <div class="toolbar">
+        <label class="search-wrap">
+          <span>検索</span>
+          <input id="personaSearch" type="search" placeholder="例：復興、再訪、ツアー、友人、交通…" aria-label="ペルソナを検索">
+        </label>
+        <div class="toolbar-actions">
+          <button class="btn secondary" id="openInsights" type="button">全体インサイト</button>
+          <button class="btn secondary" id="resetChatTop" type="button">チャットをリセット</button>
+          <button class="btn" id="printButton" type="button">印刷・PDF化</button>
+        </div>
+      </div>
+    </header>
+
+    <details class="panel relationship-map" aria-labelledby="relationshipTitle">
+      <summary class="relationship-intro">
+        <div>
+          <h2 class="section-title" id="relationshipTitle">関係人口への入口と「次の関わり」</h2>
+          <p class="section-sub">珠洲との接点を13の切り口で俯瞰。右端のペルソナをクリックすると、対応する分析と施策へ移動します。</p>
+        </div>
+        <span class="relationship-toggle"><span class="badge">全体像</span><span class="accordion-icon" aria-hidden="true"></span></span>
+      </summary>
+      <div class="relationship-content">
+        <div class="relationship-scroll custom-scrollbar">
+          <table class="relationship-table" id="relationshipTable">
+            <thead><tr><th>切り口</th><th>入口になる人</th><th>リンクするペルソナ</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <section class="panel summary-panel" aria-labelledby="summaryTitle">
+      <h2 class="section-title" id="summaryTitle">全体サマリー</h2>
+      <p class="summary-note" id="summaryNote"></p>
+      <div class="summary-grid" id="summaryGrid"></div>
+      <details class="method-box">
+        <summary>このレポートの読み方</summary>
+        <div class="method-content" id="methodContent"></div>
+      </details>
+    </section>
+
+    <div class="layout">
+      <aside class="panel sidebar">
+        <h2>ペルソナを選択</h2>
+        <div class="persona-list" id="personaList"></div>
+        <p class="footer-note">※ 各層は9〜19件の小標本です。数値差は施策仮説として読み、実施後のQR登録・再訪・継続購入で検証します。</p>
+      </aside>
+
+      <main>
+        <section class="panel persona-head" id="personaHead"></section>
+        <section class="grid-2">
+          <article class="panel">
+            <h2 class="section-title">関係継続レーダー</h2>
+            <p class="section-sub">再訪・縁・宿泊・推奨など、公開データから作った0〜100の代理指標。</p>
+            <div class="chart-wrap" id="radarWrap"></div>
+          </article>
+          <article class="panel">
+            <h2 class="section-title">行動・接点ランキング</h2>
+            <p class="section-sub">目的、情報源、交通、前後の立ち寄り先。</p>
+            <div class="tabs" id="rankingTabs" role="tablist"></div>
+            <div class="bar-list" id="rankingBars"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">合成人格プロフィール</h2>
+          <div class="profile-grid" id="profileGrid"></div>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">心理・痛点・訴求</h2>
+          <table class="always-table" id="psychologyTable"></table>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">Jobs To Be Done</h2>
+          <table class="always-table" id="jobsTable"></table>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">現実的な推奨アクション</h2>
+          <p class="section-sub">各ペルソナに対して、優先度の高い実行案に絞って提示。</p>
+          <div class="action-list" id="actionList"></div>
+        </section>
+
+        <section class="panel drive-strategy" id="driveStrategySection" hidden>
+          <h2 class="section-title">「観光地」ではなく、「観光地×あなたの愛車」</h2>
+          <p class="section-sub">場所だけを宣伝するのではなく、愛車が珠洲の風景の中で主役になる体験をつくる。</p>
+          <div class="drive-message">
+            <small>CORE MESSAGE</small>
+            <h3>いつもの愛車で、珠洲だけの一枚を。</h3>
+            <p>ドライバーにとって価値があるのは、観光地を見ることだけではなく、自分の車とその風景を一緒に残せること。新しい大型施設をつくらず、撮影する理由を足すところから始めます。</p>
+          </div>
+          <div class="drive-idea-grid">
+            <article class="drive-idea">
+              <span class="idea-kicker">すぐできる施策 01</span>
+              <h3>観光地×愛車×カメラマン</h3>
+              <p>見附島や海岸風景などで撮影日を設定し、県内カメラマンが愛車と本人を撮影。予約枠または当日受付で、小さく試せます。</p>
+            </article>
+            <article class="drive-idea">
+              <span class="idea-kicker">すぐできる施策 02</span>
+              <h3>観光地×愛車×ライトアップ</h3>
+              <p>既存のライトアップや仮設照明に、停車位置と推奨構図を追加。昼とは違う「その時間だけの一枚」を来訪理由にします。</p>
+            </article>
+          </div>
+          <h3 class="case-title">参考にしたい事例</h3>
+          <div class="case-grid">
+            <article class="case-card">
+              <strong>Grand Tour of Switzerland</strong>
+              <p>観光地ごとに公式フォトスポットを設け、風景と車の写真を「集める目的」にしています。</p>
+              <a href="https://www.myswitzerland.com/en/experiences/experience-tour/grand-tour-of-switzerland/photo-spots/" target="_blank" rel="noopener">公式フォトスポットを見る</a>
+            </article>
+            <article class="case-card">
+              <strong>Tail of the Dragon</strong>
+              <p>沿道カメラマンが走行車両を撮影し、ドライバーが後から自分の写真を探して購入できる仕組みです。</p>
+              <a href="https://tailofthedragon.com/business/killboy-photos/" target="_blank" rel="noopener">撮影事例を見る</a>
+            </article>
+            <article class="case-card">
+              <strong>千里浜の車種別ミーティング</strong>
+              <p>ハスラー等の車種コミュニティが、場所・集合走行・色別撮影を組み合わせています。</p>
+              <button class="persona-link" id="openCarCommunitiesInline" type="button">県内事例を一覧で見る</button>
+            </article>
+          </div>
+          <h3 class="case-title">では、どうマーケティングするか</h3>
+          <div class="marketing-flow">
+            <div class="marketing-step"><b>撮影企画をつくる</b><span>カメラマン／ライトアップ</span></div>
+            <div class="marketing-arrow">›</div>
+            <div class="marketing-step"><b>県内車コミュニティで試す</b><span>公開募集型・車種別団体へ案内</span></div>
+            <div class="marketing-arrow">›</div>
+            <div class="marketing-step"><b>愛車写真が次の告知になる</b><span>参加者の共有から次回募集へ</span></div>
+          </div>
+          <div class="community-cta">
+            <strong>最初の広報先は、県内の車コミュニティ</strong>
+            <p>一般向けの観光広告より先に、実際に車で集まり、撮り、共有している団体へモニター参加を依頼します。</p>
+            <button class="btn small" id="openCarCommunities" type="button">車コミュニティ11団体を見る</button>
+          </div>
+          <p class="drive-sources">※ 撮影場所は道路管理者・施設管理者と調整し、公道上の停車や生活道路への流入を促さない位置に限定します。</p>
+        </section>
+
+        <section class="grid-2">
+          <article class="panel">
+            <h2 class="section-title">代表キーワード</h2>
+            <div class="tag-list" id="keywordList"></div>
+          </article>
+          <article class="panel">
+            <h2 class="section-title">サンプルボイス</h2>
+            <div id="voiceList"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2 class="section-title">ペルソナ比較</h2>
+          <p class="section-sub">行をクリックすると、表示するペルソナを切り替えます。</p>
+          <div class="comparison-scroll custom-scrollbar">
+            <table class="comparison-table" id="comparisonTable"></table>
+          </div>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="chat-head">
+            <div>
+              <h2 id="chatTitle"></h2>
+              <small>埋め込みデータから答える簡易ルールベースです。APIキーは不要です。</small>
+            </div>
+            <div class="chat-actions">
+              <button class="btn secondary small" id="copyPrompt" type="button">AI用プロンプトをコピー</button>
+              <button class="btn secondary small" id="resetChat" type="button">リセット</button>
+            </div>
+          </div>
+          <div class="chat-messages custom-scrollbar" id="chatMessages" aria-live="polite"></div>
+          <div class="quick-questions" id="quickQuestions"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" type="text" placeholder="例：関係人口になりそう？ 最初の一手は？ 不満点は？" autocomplete="off">
+            <button type="submit">送信</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <footer class="source-footer" id="sourceFooter"></footer>
+  </div>
+
+  <div class="modal-overlay hidden" id="insightsModal" role="dialog" aria-modal="true" aria-labelledby="insightsTitle">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2 id="insightsTitle">全体インサイト</h2>
+        <button class="btn secondary small" id="closeInsights" type="button">閉じる</button>
+      </div>
+      <div class="modal-body custom-scrollbar" id="insightsBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="carCommunitiesModal" role="dialog" aria-modal="true" aria-labelledby="carCommunitiesTitle">
+    <div class="modal-content wide">
+      <div class="modal-head">
+        <div>
+          <h2 id="carCommunitiesTitle">石川・北陸の車コミュニティ候補</h2>
+          <p class="section-sub">公開情報をもとにした連携候補の整理。活動状態・募集条件は実施前に主催者へ再確認します。</p>
+        </div>
+        <button class="btn secondary small" id="closeCarCommunities" type="button">閉じる</button>
+      </div>
+      <div class="modal-body custom-scrollbar">
+        <div class="community-summary">
+          <div><b>先行モニター</b><span>公開募集・車種不問・途中参加可の団体から相談</span></div>
+          <div><b>車種別検証</b><span>コペン、ロードスター、ハスラー等で構図や導線を確認</span></div>
+          <div><b>年次イベント連携</b><span>展示会で周知し、珠洲での常設利用へつなぐ</span></div>
+        </div>
+        <div class="community-table-wrap custom-scrollbar">
+          <table class="community-table" id="carCommunityTable"></table>
+        </div>
+        <p class="footer-note">※ 活動状態・費用・参加条件は、いただいた調査情報をレポート用に再構成したものです。非公開・休眠可能性のある団体へ一斉連絡せず、現行窓口と活動継続を個別確認します。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DB = {"meta":{"title":"珠洲との関係人口予備軍をMilliで観測する。","source_name":"石川県観光データ分析プラットフォーム『Milli』能登エリア公開データ","source_url":"https://code4fukui.github.io/ishikawa-kanko-survey/noto.csv","reference_url":"https://beeb-c4n.github.io/Milli/nototetsu/","generated_at":"2026-08-19 14:00 JST","definition":"2024年1月1日以降に『道の駅すずなり』で回答した71件。県外在住61件を関係人口ポテンシャル評価の対象とし、石川県内在住10件は地域内層として別扱い。","persona_rules":["石川県在住 → 地域内層","復興・支援・応援・被災・ボランティア等の記述 → 応援訪問者","友人・親戚訪問または仕事目的 → 縁訪問者","2回目以上の県外客 → 県外リピーター","初訪問かつツアー・団体交通 → 団体周遊層","上記以外の初訪問県外客 → 自主探索層"],"score_definition":"関係継続ポテンシャル（0〜100）は、再訪実績30%、1年以内再訪意向25%、復興応援・人の縁20%、能登宿泊10%、施設推奨10%、施設消費5%の代理指標。55以上を高、30〜54.9を育成余地、30未満を入口段階とする。住民は対象外。"},"overall":{"n":71,"nonresident_n":61,"date_min":"2024-06-29","date_max":"2026-08-18","year_counts":{"2024":5,"2025":15,"2026":51},"trip_spend_median":55000,"facility_spend_median":4000,"facility_nps":16.9,"trip_nps":45.1,"inconvenience_pct":9.9,"nonresident_one_year_revisit_pct":45.9,"nonresident_repeat_pct":39.3,"nonresident_support_pct":31.1,"nonresident_noto_stay_pct":60.7,"relationship_score_median":48.5,"potential_buckets":{"high":{"n":23,"pct":37.7},"medium":{"n":25,"pct":41.0},"entry":{"n":13,"pct":21.3}}},"personas":[{"id":"support","order":1,"title":"復興を見て、買って、伝えたい応援訪問者","nickname":"伴走応援派・森さん","potential":"high","potential_label":"高い","description":"復興支援、ボランティア、被災地の見学、応援消費などを来訪理由や自由記述に持つ県外客。","narrative":"善意はすでに行動へ移っている。ただし、施設消費の中央値は大きくなく、継続接点も自動では生まれない。『今できる応援』を具体化し、次の訪問や地域産品の継続購入へつなぐ設計が必要な層。","psychology":["現地を自分の目で確かめたい","消費や発信を通じて力になりたい","観光を楽しむことが迷惑にならないか知りたい"],"pain":["訪問可能な場所と復旧状況が分かりにくい","何を買い、どこへ行けば応援になるか見えにくい","一度訪れた後の継続接点がない"],"appeal":["今日の珠洲を見て、買って、またつながる","応援が地域に届く一品と一日","復興の歩みを、次の訪問理由へ"],"jobs":{"functional":["安全に訪ねられる場所と応援方法を知りたい","限られた時間で地域に届く消費をしたい"],"emotional":["善意を自己満足で終わらせたくない","変化を見守る実感を持ちたい"],"social":["珠洲の今を周囲に丁寧に伝えたい","また訪れる理由を家族や友人と共有したい"]},"actions":[{"title":"月1回の『今の珠洲／今できる応援』をQRで登録できるようにする","impact":"一度きりの応援来訪を、次の訪問・購入へつなぐ","job":"復興の進み方を知り、無理なく力になりたい","effort":"すぐできる"},{"title":"応援先が分かる商品棚と生産者カードをつくる","impact":"善意を具体的な地域内消費へ変える","job":"何を選べば地域に届くか知りたい","effort":"すぐできる"},{"title":"半日参加できる見学・軽作業・語り部枠を月1回設ける","impact":"観光客から継続的な伴走者への入口をつくる","job":"現地の負担にならない形で関わりたい","effort":"要連携"}],"voices":["少しでも復興の力になりたいと思いました。","珠洲の復興支援がまだまだ必要だということを多くの人に伝えたいです。"],"n":19,"share":26.8,"confidence":"directional","confidence_label":"n≥15、方向性を確認","metrics":{"trip_spend_median":72000,"facility_spend_median":2000,"facility_nps":15.8,"trip_nps":47.4,"one_year_revisit_pct":47.4,"repeat_pct":42.1,"noto_stay_pct":52.6,"inconvenience_pct":10.5,"support_pct":100.0,"human_tie_pct":10.5,"connection_pct":100.0,"promoter_pct":36.8,"relationship_score":59.4},"radar":{"再訪実績":42.1,"1年以内再訪":47.4,"能登宿泊":52.6,"応援・縁":100.0,"推奨者":36.8,"自主来訪":63.2},"rankings":{"purpose":[{"label":"地元の美味しいものを食べる","count":10,"pct":52.6},{"label":"名所、旧跡の観光","count":6,"pct":31.6},{"label":"宿でのんびり過ごす","count":2,"pct":10.5},{"label":"ドライブ・ツーリング","count":2,"pct":10.5},{"label":"まちあるき、都市散策","count":2,"pct":10.5},{"label":"友人・親戚を訪ねる","count":2,"pct":10.5}],"info":[{"label":"インターネット・アプリ","count":7,"pct":36.8},{"label":"観光パンフレット・ポスター","count":5,"pct":26.3},{"label":"X(旧：Twitter)","count":5,"pct":26.3},{"label":"友人・知人","count":5,"pct":26.3},{"label":"Instagram","count":3,"pct":15.8},{"label":"観光連盟やDMOのHP","count":3,"pct":15.8}],"transport":[{"label":"旅行会社ツアーバス","count":6,"pct":31.6},{"label":"自家用車","count":4,"pct":21.1},{"label":"路線バス","count":4,"pct":21.1},{"label":"レンタカー","count":3,"pct":15.8},{"label":"タクシー","count":2,"pct":10.5},{"label":"在来線","count":1,"pct":5.3}],"before":[{"label":"輪島朝市","count":5,"pct":26.3},{"label":"能登食祭市場","count":2,"pct":10.5},{"label":"珠洲岬","count":2,"pct":10.5},{"label":"能登ワイン","count":2,"pct":10.5},{"label":"禄剛崎灯台","count":1,"pct":5.3},{"label":"千里浜なぎさドライブウェイ","count":1,"pct":5.3}],"after":[{"label":"千里浜なぎさドライブウェイ","count":3,"pct":15.8},{"label":"禄剛崎灯台","count":3,"pct":15.8},{"label":"道の駅のとじま","count":2,"pct":10.5},{"label":"青の洞窟","count":2,"pct":10.5},{"label":"輪島朝市","count":1,"pct":5.3},{"label":"能登食祭市場","count":1,"pct":5.3}]},"profile":{"age":"50代42.1%、60代15.8%、40代10.5%","origin":"首都圏57.9%、関西21.1%、北陸・信越10.5%","companion":"団体旅行31.6%、自分ひとり21.1%、夫婦2人15.8%","income":"1,200万円以上 1,500万円未満15.8%、700万円以上 800万円未満15.8%、300万円以上 400万円未満15.8%","behavior":"地元の美味しいものを食べる、名所、旧跡の観光、宿でのんびり過ごす、ドライブ・ツーリング、まちあるき、都市散策","facility_visit":"初めて57.9%、2～5回目31.6%、6～10回目5.3%"},"keywords":[{"label":"食","count":50},{"label":"復興","count":22},{"label":"応援","count":20},{"label":"自然","count":12},{"label":"海鮮","count":9},{"label":"土産","count":8},{"label":"友人・親戚","count":7},{"label":"珠洲","count":6},{"label":"能登","count":5},{"label":"バス","count":4},{"label":"祭り","count":4},{"label":"羽生結弦","count":2}]},{"id":"ties_work","order":2,"title":"珠洲の人・仕事に会いに戻る縁訪問者","nickname":"ご縁往来者・坂本さん","potential":"high","potential_label":"高い","description":"友人・親戚への訪問や仕事を主目的に珠洲へ来る県外客。観光だけではない具体的な人間関係を持つ。","narrative":"1年以内の再訪意向が最も高く、能登宿泊と施設消費も厚い。すでに関係人口に近い層なので、新たな動機を作るより、『前回から何が変わったか』『新しく開いた店はどこか』を短く知らせる方が効く。","psychology":["会いたい人・必要な仕事が来訪の中心","観光情報は主目的を邪魔しない範囲で欲しい","地域の変化を身近な人から聞いている"],"pain":["前回から新しく開いた店・再開した店が分からない","用事の前後に立ち寄れる短時間情報が少ない","珠洲の変化を一覧で確認できない"],"appeal":["会いに来た日に、珠洲の今も持ち帰る","いつもの珠洲に、ひとつ新しい寄り道","おかえりのついでに、地域へ届く一品"],"jobs":{"functional":["用事の前後で無理なく食事や買い物をしたい","地元の人に喜ばれる手土産を選びたい"],"emotional":["縁のある地域の役に立っている実感が欲しい","以前との変化を確かめたい"],"social":["訪問先の人と共有できる話題を持ちたい","次に来る家族・同僚へ珠洲を薦めたい"]},"actions":[{"title":"『前回から変わった珠洲・新しく開いた店』を季節更新する","impact":"新しく開いた店、再開した店、前回から変わった場所だけを一画面で知らせ、用事の前後に新しい寄り道をつくる","job":"知っている珠洲の『新しいところ』をすぐ知りたい","effort":"要運用"}],"voices":["名物の塩アイスがとっても美味しくて、店員さんもいつも優しいからです。","ようこそという気持ちが感じられた。"],"n":11,"share":15.5,"confidence":"exploratory","confidence_label":"小標本、施策仮説として読む","metrics":{"trip_spend_median":55000,"facility_spend_median":7500,"facility_nps":36.4,"trip_nps":63.6,"one_year_revisit_pct":72.7,"repeat_pct":45.5,"noto_stay_pct":72.7,"inconvenience_pct":27.3,"support_pct":0.0,"human_tie_pct":100.0,"connection_pct":100.0,"promoter_pct":54.5,"relationship_score":70.8},"radar":{"再訪実績":45.5,"1年以内再訪":72.7,"能登宿泊":72.7,"応援・縁":100.0,"推奨者":54.5,"自主来訪":100.0},"rankings":{"purpose":[{"label":"友人・親戚を訪ねる","count":8,"pct":72.7},{"label":"出張など仕事関係","count":4,"pct":36.4},{"label":"名所、旧跡の観光","count":3,"pct":27.3},{"label":"まちあるき、都市散策","count":1,"pct":9.1},{"label":"温泉や露天風呂","count":1,"pct":9.1},{"label":"地元の美味しいものを食べる","count":1,"pct":9.1}],"info":[{"label":"友人・知人","count":3,"pct":27.3},{"label":"新聞・雑誌・ガイドブック","count":3,"pct":27.3},{"label":"インターネット・アプリ","count":2,"pct":18.2},{"label":"観光パンフレット・ポスター","count":2,"pct":18.2},{"label":"観光展・物産展","count":2,"pct":18.2},{"label":"グーグルマップ","count":1,"pct":9.1}],"transport":[{"label":"自家用車","count":7,"pct":63.6},{"label":"路線バス","count":2,"pct":18.2},{"label":"徒歩","count":2,"pct":18.2},{"label":"レンタカー","count":1,"pct":9.1},{"label":"タクシー","count":1,"pct":9.1}],"before":[{"label":"輪島朝市","count":2,"pct":18.2},{"label":"禄剛崎灯台","count":1,"pct":9.1},{"label":"千里浜なぎさドライブウェイ","count":1,"pct":9.1},{"label":"道の駅のとじま","count":1,"pct":9.1},{"label":"市役所","count":1,"pct":9.1}],"after":[{"label":"禄剛崎灯台","count":2,"pct":18.2},{"label":"のとじま水族館","count":2,"pct":18.2},{"label":"道の駅のとじま","count":1,"pct":9.1},{"label":"能登食祭市場","count":1,"pct":9.1},{"label":"珠洲塩田村","count":1,"pct":9.1},{"label":"能登空港","count":1,"pct":9.1}]},"profile":{"age":"60代27.3%、40代18.2%、30代18.2%","origin":"首都圏63.6%、関西9.1%、北海道・東北9.1%","companion":"職場の同僚18.2%、自分ひとり18.2%、親18.2%","income":"700万円以上 800万円未満27.3%、500万円以上 600万円未満18.2%、600万円以上 700万円未満18.2%","behavior":"友人・親戚を訪ねる、出張など仕事関係、名所、旧跡の観光、まちあるき、都市散策、温泉や露天風呂","facility_visit":"初めて54.5%、11回目以上18.2%、6～10回目18.2%"},"keywords":[{"label":"友人・親戚","count":16},{"label":"食","count":10},{"label":"仕事","count":8},{"label":"能登","count":5},{"label":"温泉","count":3},{"label":"祭り","count":2},{"label":"自然","count":2},{"label":"バス","count":1},{"label":"土産","count":1}]},{"id":"repeat","order":3,"title":"奥能登を何度も確かめる県外リピーター","nickname":"季節再訪者・中村さん","potential":"high","potential_label":"高い","description":"復興や人との縁を明示しないものの、道の駅すずなりを2回以上訪れている県外客。","narrative":"再訪実績そのものが強い証拠で、1年以内再訪意向も高い。次の目標は『年に4回、珠洲へ』。春夏秋冬ならではの楽しみ方を年間カレンダーとして定義できれば、再訪理由とSNS発信の物語を同時につくれる。","psychology":["初訪問より具体的な好みと基準を持つ","季節や復旧状況の変化を見たい","過剰な説明より更新情報を求める"],"pain":["四季それぞれの楽しみ方が定義されていない","季節ごとの情報発信が単発になりやすい","次に来る月を具体的に決めにくい"],"appeal":["年に4回、珠洲へ","春夏秋冬、次の物語が待っている","季節が変わるたび、珠洲が近くなる"],"jobs":{"functional":["前回と違う店・景色・商品を知りたい","次の季節の訪問理由を決めたい"],"emotional":["地域の変化を見守っている実感が欲しい","自分だけが知る珠洲を増やしたい"],"social":["初めて行く人へ具体的に薦めたい","リピーターとして地域と会話したい"]},"actions":[{"title":"『年に4回、珠洲へ』四季の年間カレンダーを定義する","impact":"春夏秋冬ならではの景色・食・祭り・体験を先に決め、SNSのストーリー×カレンダーを年間運用しやすくする","job":"次の季節にしかない楽しみを知り、年間の再訪予定を組みたい","effort":"要運用"}],"voices":["珠洲市で食べた福幸丼が最高。いろは書店さんも楽しかった。","地元の人の対応が皆さん優しくまた観光地も派手なく良かったです。"],"n":11,"share":15.5,"confidence":"exploratory","confidence_label":"小標本、施策仮説として読む","metrics":{"trip_spend_median":64000,"facility_spend_median":4000,"facility_nps":9.1,"trip_nps":45.5,"one_year_revisit_pct":63.6,"repeat_pct":100.0,"noto_stay_pct":63.6,"inconvenience_pct":9.1,"support_pct":0.0,"human_tie_pct":0.0,"connection_pct":0.0,"promoter_pct":36.4,"relationship_score":54.5},"radar":{"再訪実績":100.0,"1年以内再訪":63.6,"能登宿泊":63.6,"応援・縁":0.0,"推奨者":36.4,"自主来訪":54.5},"rankings":{"purpose":[{"label":"地元の美味しいものを食べる","count":5,"pct":45.5},{"label":"買い物、アウトレット","count":5,"pct":45.5},{"label":"名所、旧跡の観光","count":4,"pct":36.4},{"label":"温泉や露天風呂","count":3,"pct":27.3},{"label":"まちあるき、都市散策","count":2,"pct":18.2},{"label":"花見や紅葉などの自然鑑賞","count":2,"pct":18.2}],"info":[{"label":"観光パンフレット・ポスター","count":6,"pct":54.5},{"label":"インターネット・アプリ","count":3,"pct":27.3},{"label":"観光協会等の案内所","count":2,"pct":18.2},{"label":"X(旧：Twitter)","count":2,"pct":18.2},{"label":"友人・知人","count":2,"pct":18.2},{"label":"タクシードライバーや地元の人","count":2,"pct":18.2}],"transport":[{"label":"旅行会社ツアーバス","count":4,"pct":36.4},{"label":"自家用車","count":3,"pct":27.3},{"label":"レンタカー","count":2,"pct":18.2},{"label":"タクシー","count":1,"pct":9.1},{"label":"美術館のチャーターしたバス","count":1,"pct":9.1}],"before":[{"label":"千里浜なぎさドライブウェイ","count":4,"pct":36.4},{"label":"輪島朝市","count":2,"pct":18.2},{"label":"能登食祭市場","count":1,"pct":9.1},{"label":"禄剛崎灯台","count":1,"pct":9.1},{"label":"見附島、空港","count":1,"pct":9.1}],"after":[{"label":"輪島朝市","count":4,"pct":36.4},{"label":"のとじま水族館","count":1,"pct":9.1},{"label":"禄剛崎灯台","count":1,"pct":9.1},{"label":"能登食祭市場","count":1,"pct":9.1},{"label":"道の駅のとじま","count":1,"pct":9.1},{"label":"法面修復見学、千里浜、","count":1,"pct":9.1}]},"profile":{"age":"50代27.3%、60代27.3%、40代18.2%","origin":"首都圏27.3%、関西27.3%、北海道・東北18.2%","companion":"夫婦2人27.3%、友人27.3%、団体旅行18.2%","income":"300万円以上 400万円未満18.2%、1,200万円以上 1,500万円未満18.2%、800万円以上 900万円未満18.2%","behavior":"地元の美味しいものを食べる、買い物、アウトレット、名所、旧跡の観光、温泉や露天風呂、まちあるき、都市散策","facility_visit":"2～5回目81.8%、6～10回目9.1%、11回目以上9.1%"},"keywords":[{"label":"食","count":31},{"label":"温泉","count":6},{"label":"自然","count":5},{"label":"羽生結弦","count":4},{"label":"能登","count":4},{"label":"バス","count":2},{"label":"珠洲","count":2},{"label":"アート","count":1},{"label":"祭り","count":1}]},{"id":"independent_first","order":4,"title":"ひとり旅・自走型ドライバー","nickname":"おひとり様ドライバー・高橋さん","potential":"medium","potential_label":"育成余地","description":"自家用車・レンタカーを中心に、自分のペースで珠洲を巡る初訪問者。一部に公共交通・同伴旅行を含む合成層。","narrative":"車で海・風景・食を自分の順番で組み立てる層。『観光地』だけを押すのではなく、『観光地×あなたの愛車』として、自分の車が旅の主役になる撮影体験をつくると来訪理由が明確になる。","psychology":["自分の車やレンタカーで旅程を組みたい","海・風景・食を一続きで楽しみたい","走った道と車の写真を旅の証として残したい"],"pain":["安全に停めて車と風景を撮れる場所が分からない","道路・営業・給油情報を一画面で確認できない","初回だけで回り切ると次の来訪理由が残らない"],"appeal":["観光地×あなたの愛車","愛車と残す、珠洲の一枚","いつもの車で、特別な風景へ"],"jobs":{"functional":["走れる区間と安全な撮影場所を確認したい","景色・食・買い物を短い周遊ルートでつなぎたい"],"emotional":["自分の車で珠洲に到達した達成感が欲しい","次は別の季節を走りたいと思いたい"],"social":["車仲間に安全なルートとして薦めたい","自分の車と珠洲の風景を写真で残したい"]},"actions":[{"title":"観光地×愛車×カメラマン","impact":"見附島や海岸風景などで、愛車と本人をカメラマンが撮影する日を設定する","job":"自分の車と珠洲の風景を、特別な一枚として残したい","effort":"すぐできる"},{"title":"観光地×愛車×ライトアップ","impact":"既存の観光地や建物のライトアップ時間に、停車位置と撮影構図を用意して夜の撮影目的をつくる","job":"昼間とは違う珠洲と愛車の写真を撮りたい","effort":"小規模"}],"voices":["公共交通機関のお得切符の情報がバラバラで、検索が、面倒だった","海、景色"],"n":9,"share":12.7,"confidence":"exploratory","confidence_label":"小標本、施策仮説として読む","metrics":{"trip_spend_median":47500,"facility_spend_median":7500,"facility_nps":0.0,"trip_nps":44.4,"one_year_revisit_pct":44.4,"repeat_pct":0.0,"noto_stay_pct":77.8,"inconvenience_pct":11.1,"support_pct":0.0,"human_tie_pct":0.0,"connection_pct":0.0,"promoter_pct":33.3,"relationship_score":32.9},"radar":{"再訪実績":0.0,"1年以内再訪":44.4,"能登宿泊":77.8,"応援・縁":0.0,"推奨者":33.3,"自主来訪":100.0},"rankings":{"purpose":[{"label":"地元の美味しいものを食べる","count":6,"pct":66.7},{"label":"温泉や露天風呂","count":4,"pct":44.4},{"label":"宿でのんびり過ごす","count":3,"pct":33.3},{"label":"まちあるき、都市散策","count":3,"pct":33.3},{"label":"名所、旧跡の観光","count":2,"pct":22.2},{"label":"ドライブ・ツーリング","count":2,"pct":22.2}],"info":[{"label":"インターネット・アプリ","count":6,"pct":66.7},{"label":"友人・知人","count":2,"pct":22.2},{"label":"Instagram","count":1,"pct":11.1},{"label":"観光パンフレット・ポスター","count":1,"pct":11.1}],"transport":[{"label":"自家用車","count":4,"pct":44.4},{"label":"レンタカー","count":3,"pct":33.3},{"label":"路線バス","count":2,"pct":22.2},{"label":"在来線","count":1,"pct":11.1},{"label":"タクシー","count":1,"pct":11.1}],"before":[{"label":"千里浜なぎさドライブウェイ","count":2,"pct":22.2},{"label":"禄剛崎灯台","count":2,"pct":22.2},{"label":"宇出津港","count":1,"pct":11.1},{"label":"イカの駅","count":1,"pct":11.1},{"label":"直行した","count":1,"pct":11.1},{"label":"珠州以外に行っていない","count":1,"pct":11.1}],"after":[{"label":"禄剛崎灯台","count":2,"pct":22.2},{"label":"輪島朝市","count":2,"pct":22.2},{"label":"千里浜なぎさドライブウェイ","count":1,"pct":11.1},{"label":"路線バス利用のため","count":1,"pct":11.1},{"label":"珠州以外行く予定なし","count":1,"pct":11.1}]},"profile":{"age":"60代33.3%、50代33.3%、20代11.1%","origin":"首都圏44.4%、関西33.3%、中京11.1%","companion":"自分ひとり55.6%、恋人22.2%、夫婦2人11.1%","income":"500万円以上 600万円未満33.3%、1,500万円以上22.2%、100万円未満11.1%","behavior":"地元の美味しいものを食べる、温泉や露天風呂、宿でのんびり過ごす、まちあるき、都市散策、名所、旧跡の観光","facility_visit":"初めて100.0%"},"keywords":[{"label":"食","count":27},{"label":"自然","count":11},{"label":"温泉","count":8},{"label":"海鮮","count":5},{"label":"バス","count":3},{"label":"土産","count":1},{"label":"羽生結弦","count":1}]},{"id":"group_intro","order":5,"title":"ツアーで初めて珠洲に触れる団体周遊層","nickname":"入口ツアラー・佐藤さん","potential":"low","potential_label":"入口段階","description":"旅行会社ツアーバス等で初めて道の駅すずなりを訪れた県外客。食・温泉・名所を広く楽しむ。","narrative":"珠洲との接点はつくれているが、この層では1年以内の再訪意向が確認できなかった。ツアーの立ち寄りを『個人で戻る理由』へ変換する仕掛けがなければ、良い思い出で終わる可能性が高い。","psychology":["限られた時間で珠洲らしさを知りたい","旅程はツアーに委ねている","次回は個人で行けるか不安がある"],"pain":["立ち寄り時間が短く、地域との会話が残りにくい","自力で再訪する交通イメージが持てない","購入後に珠洲とつながる方法がない"],"appeal":["20分の立ち寄りを、次の珠洲旅の入口へ","ツアーで知って、次は自分で会いに行く","今日買った一品から、珠洲の続きへ"],"jobs":{"functional":["短時間で珠洲らしいものを選びたい","次は個人で来られる方法を知りたい"],"emotional":["立ち寄っただけではない記憶を持ち帰りたい","被災地観光への戸惑いを解消したい"],"social":["家族へ珠洲の話と土産を持ち帰りたい","次回の旅先候補として共有したい"]},"actions":[{"title":"バス出発前に3分の『珠洲の今と次の来方』案内を入れる","impact":"受動的な立ち寄りを、理解と再訪意向へ変える","job":"短時間でも珠洲の背景を知りたい","effort":"すぐできる"},{"title":"商品袋に個人再訪用の交通・宿泊QRを1枚だけ入れる","impact":"ツアー後の自力再訪の不安を下げる","job":"次は自分で来る方法を持ち帰りたい","effort":"すぐできる"},{"title":"旅行会社へ『再訪クーポン』ではなく季節便りを提供する","impact":"値引きよりも、次に見る理由を残す","job":"別の季節の珠洲も知りたい","effort":"要連携"}],"voices":["震災後の奥能登など、自分たちでは行きにくいところまで行けた。","初めて訪れましたがイベントなども開かれている様で活用されていると感じた"],"n":11,"share":15.5,"confidence":"exploratory","confidence_label":"小標本、施策仮説として読む","metrics":{"trip_spend_median":75000,"facility_spend_median":4000,"facility_nps":0.0,"trip_nps":-9.1,"one_year_revisit_pct":0.0,"repeat_pct":0.0,"noto_stay_pct":45.5,"inconvenience_pct":0.0,"support_pct":0.0,"human_tie_pct":0.0,"connection_pct":0.0,"promoter_pct":9.1,"relationship_score":24.5},"radar":{"再訪実績":0.0,"1年以内再訪":0.0,"能登宿泊":45.5,"応援・縁":0.0,"推奨者":9.1,"自主来訪":0.0},"rankings":{"purpose":[{"label":"地元の美味しいものを食べる","count":10,"pct":90.9},{"label":"名所、旧跡の観光","count":7,"pct":63.6},{"label":"温泉や露天風呂","count":6,"pct":54.5},{"label":"宿でのんびり過ごす","count":1,"pct":9.1},{"label":"まちあるき、都市散策","count":1,"pct":9.1}],"info":[{"label":"観光パンフレット・ポスター","count":5,"pct":45.5},{"label":"新聞・雑誌・ガイドブック","count":3,"pct":27.3},{"label":"インターネット・アプリ","count":2,"pct":18.2},{"label":"タクシードライバーや地元の人","count":1,"pct":9.1},{"label":"観光協会等の案内所","count":1,"pct":9.1},{"label":"ツアーに含まれていた","count":1,"pct":9.1}],"transport":[{"label":"旅行会社ツアーバス","count":10,"pct":90.9},{"label":"飛行機","count":1,"pct":9.1},{"label":"在来線","count":1,"pct":9.1},{"label":"路線バス","count":1,"pct":9.1}],"before":[{"label":"千里浜なぎさドライブウェイ","count":5,"pct":45.5},{"label":"輪島朝市","count":1,"pct":9.1},{"label":"ひょっこり温泉","count":1,"pct":9.1},{"label":"珠洲岬","count":1,"pct":9.1}],"after":[{"label":"千里浜なぎさドライブウェイ","count":2,"pct":18.2},{"label":"能登食祭市場","count":1,"pct":9.1},{"label":"コスモアイル","count":1,"pct":9.1},{"label":"白米千枚田","count":1,"pct":9.1},{"label":"のと鉄道","count":1,"pct":9.1},{"label":"ひょっこり温泉","count":1,"pct":9.1}]},"profile":{"age":"60代45.5%、50代36.4%、30代9.1%","origin":"首都圏63.6%、中京27.3%、中国・四国9.1%","companion":"夫婦2人36.4%、親27.3%、団体旅行27.3%","income":"400万円以上 500万円未満27.3%、1,200万円以上 1,500万円未満27.3%、800万円以上 900万円未満18.2%","behavior":"地元の美味しいものを食べる、名所、旧跡の観光、温泉や露天風呂、宿でのんびり過ごす、まちあるき、都市散策","facility_visit":"初めて100.0%"},"keywords":[{"label":"食","count":25},{"label":"温泉","count":12},{"label":"自然","count":5},{"label":"バス","count":3},{"label":"土産","count":1},{"label":"海鮮","count":1},{"label":"能登","count":1},{"label":"輪島","count":1}]},{"id":"resident","order":6,"title":"県内から珠洲を支える生活圏来訪者","nickname":"地域つなぎ手・山本さん","potential":"local","potential_label":"地域内層","description":"石川県内在住で、仕事・家族・買い物・観光などを通じて珠洲を訪れる層。関係人口の対象外だが、県外客との橋渡し役になり得る。","narrative":"住民・県内客は関係人口ではないため、同じスコアで評価しない。高い再訪実績を生かし、県外の友人を連れてくる案内役、現地情報の更新役、商品のモニターとして位置付けると実装しやすい。","psychology":["珠洲を県内の生活・仕事圏として捉える","復旧状況や営業情報を比較的把握しやすい","県外客へ説明できる具体情報を持ちたい"],"pain":["県内でも奥能登の最新情報が分散している","友人を連れて行く時の定番コースがない","地域を支える行動が個人任せになりやすい"],"appeal":["県内から珠洲へ、また一人つなぐ","知っている人が案内できる奥能登","地元目線で育てる、すずなりの次"],"jobs":{"functional":["県外の友人を安心して案内したい","営業・交通・商品情報をすぐ確認したい"],"emotional":["県内から復興を支えている実感が欲しい","珠洲の変化を見守りたい"],"social":["身近な人へ珠洲の今を伝えたい","事業者と来訪者をつなぐ役割を持ちたい"]},"actions":[{"title":"県内客向け『友人を連れて行く珠洲』1枚ガイドを作る","impact":"県内客を県外新規客の案内役にする","job":"大切な人を安心して案内したい","effort":"すぐできる"},{"title":"月1回の営業・交通情報チェック協力者を募集する","impact":"情報更新を現場だけに集中させない","job":"知っている情報で地域に役立ちたい","effort":"小規模"},{"title":"新商品モニターと『連れてきた声』の収集を行う","impact":"県外客に通じる商品・案内を共同で磨く","job":"珠洲の良さを伝わる形にしたい","effort":"要連携"}],"voices":["珠洲でしか買えないものがおいてある。","飲食店どこやってるかマップみたいなのがほしい"],"n":10,"share":14.1,"confidence":"exploratory","confidence_label":"小標本、施策仮説として読む","metrics":{"trip_spend_median":13250,"facility_spend_median":2000,"facility_nps":40.0,"trip_nps":80.0,"one_year_revisit_pct":40.0,"repeat_pct":70.0,"noto_stay_pct":30.0,"inconvenience_pct":0.0,"support_pct":10.0,"human_tie_pct":40.0,"connection_pct":40.0,"promoter_pct":60.0,"relationship_score":null},"radar":{"再訪実績":70.0,"1年以内再訪":40.0,"能登宿泊":30.0,"応援・縁":40.0,"推奨者":60.0,"自主来訪":80.0},"rankings":{"purpose":[{"label":"出張など仕事関係","count":3,"pct":30.0},{"label":"宿でのんびり過ごす","count":3,"pct":30.0},{"label":"名所、旧跡の観光","count":3,"pct":30.0},{"label":"友人・親戚を訪ねる","count":1,"pct":10.0},{"label":"買い物、アウトレット","count":1,"pct":10.0},{"label":"ドライブ・ツーリング","count":1,"pct":10.0}],"info":[{"label":"友人・知人","count":4,"pct":40.0},{"label":"新聞・雑誌・ガイドブック","count":3,"pct":30.0},{"label":"観光展・物産展","count":3,"pct":30.0},{"label":"観光パンフレット・ポスター","count":3,"pct":30.0},{"label":"X(旧：Twitter)","count":3,"pct":30.0},{"label":"TV・ラジオ番組やCM","count":2,"pct":20.0}],"transport":[{"label":"自家用車","count":7,"pct":70.0},{"label":"旅行会社ツアーバス","count":2,"pct":20.0},{"label":"路線バス","count":1,"pct":10.0}],"before":[{"label":"須須神社","count":2,"pct":20.0},{"label":"輪島朝市","count":1,"pct":10.0},{"label":"らほると珠洲","count":1,"pct":10.0},{"label":"見附島","count":1,"pct":10.0},{"label":"ふらっとほうむ","count":1,"pct":10.0},{"label":"木ノ浦ビレッジ","count":1,"pct":10.0}],"after":[{"label":"見附島","count":4,"pct":40.0},{"label":"千里浜なぎさドライブウェイ","count":1,"pct":10.0},{"label":"このままかえるから","count":1,"pct":10.0},{"label":"イカキング","count":1,"pct":10.0}]},"profile":{"age":"60代30.0%、30代30.0%、50代20.0%","origin":"石川県内100.0%","companion":"自分ひとり30.0%、夫婦2人20.0%、小学生以下連れの家族20.0%","income":"200万円以上 300万円未満40.0%、600万円以上 700万円未満20.0%、800万円以上 900万円未満10.0%","behavior":"出張など仕事関係、宿でのんびり過ごす、名所、旧跡の観光、友人・親戚を訪ねる、買い物、アウトレット","facility_visit":"2～5回目40.0%、11回目以上30.0%、初めて30.0%"},"keywords":[{"label":"食","count":7},{"label":"仕事","count":6},{"label":"土産","count":3},{"label":"自然","count":3},{"label":"友人・親戚","count":2},{"label":"海鮮","count":2},{"label":"珠洲","count":2},{"label":"能登","count":2},{"label":"復興","count":1}]}],"insights":{"answer":"関係人口へ深まる可能性は確認できる。ただし全体一様ではなく、『人との縁』『すでにある再訪実績』『復興への能動的な関心』を持つ層から優先して継続接点をつくるべきである。","bullets":["県外客61件のうち、1年以内再訪意向は45.9%、すでに2回以上訪れている人は39.3%。","復興・支援・応援等を明示した県外客は31.1%。善意を次の訪問・購入・参加へ変える余地がある。","友人・親戚・仕事で来る縁訪問者は1年以内再訪意向72.7%で最も高い。一方、ツアー初訪問層は0%で、接触だけでは継続関係にならない。","したがって、広く会員を集めるより、縁訪問者・リピーター・応援訪問者にそれぞれ異なる小さな役割を渡す方が現実的。"],"limitations":["アンケート回答者の便宜標本であり、道の駅すずなり来訪者全体を代表するとは限らない。","『関係人口になりたいか』を直接質問していないため、再訪・宿泊・応援記述などの代理指標で推定している。","再訪意向は石川県全体への意向であり、珠洲市への再訪を直接保証しない。","回答は2026年が51件と多く、年別増減を来訪者数のトレンドとして解釈できない。","各ペルソナは9〜19件の小標本で、数値差は施策仮説として扱う。"]}};
+    const personas = DB.personas;
+    let activeId = personas[0].id;
+    let activeRanking = "purpose";
+
+    const $ = (selector) => document.querySelector(selector);
+    const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+    const yen = (value) => value == null ? "—" : `${Number(value).toLocaleString("ja-JP")}円`;
+    const num = (value, suffix="") => value == null ? "—" : `${Number(value).toLocaleString("ja-JP", {maximumFractionDigits:1})}${suffix}`;
+    const currentPersona = () => personas.find(persona => persona.id === activeId) || personas[0];
+    const potentialClass = value => value === "medium" ? "medium" : value === "low" ? "low" : value === "local" ? "local" : "";
+
+    const RELATIONSHIP_MAP = [
+      {cut:"地域活動", entry:"地域づくりイベント、清掃、ワークショップ等への参加者", municipal:"地域団体の活動を一覧化。「2時間だけ」「オンライン可」など参加負担を表示", next:"一度参加した地域・団体から次回募集を通知", personas:["support","resident"]},
+      {cut:"友人・知人訪問", entry:"地域住民を訪ねてくる県外の家族・友人", municipal:"「県民が案内したい場所」マップ、住民から招待できる体験チケット", next:"訪問者自身が地域イベントへ参加できる導線を付ける", personas:["ties_work","resident"]},
+      {cut:"ボランティア", entry:"復興支援、環境整備、イベント支援参加者", municipal:"単発作業だけでなく「また来てほしい仕事」を見える化", next:"終了時に次回活動・地域団体・いしかわのWa!を案内", personas:["support"]},
+      {cut:"祭り", entry:"観客、写真目的、祭りボランティア", municipal:"「見る祭り」から「支える祭り」へ。設営、片付け、撮影、記録など役割を細分化", next:"お祭りお助け隊への登録、翌年の祭りへの再招待", personas:["support","repeat","resident"]},
+      {cut:"仕事", entry:"出張者、副業人材、企業社員、専門職", municipal:"1日・半日程度の「地域の小さな仕事」を募集。デザイン、撮影、IT、広報も対象", next:"一度仕事をした人を、別案件や地域プロジェクトへつなぐ", personas:["ties_work","resident"]},
+      {cut:"店舗・事業者", entry:"店主や作り手を目的に訪れる人", municipal:"デジタルマップ＋事業者紹介カード。道の駅や宿泊施設で配布", next:"「この人に会いに行く」という再訪理由を作る", personas:["ties_work","repeat","independent_first"]},
+      {cut:"食", entry:"飲食店、酒蔵、農家、漁業者のファン", municipal:"商品だけでなく生産者を紹介。収穫、酒造り、漁、料理イベントへ接続", next:"「食べる」→「作る人を知る」→「手伝う・買い続ける」", personas:["support","repeat","independent_first","group_intro"]},
+      {cut:"宿泊", entry:"同じ宿・地域に複数回来る人", municipal:"宿を地域との窓口にする。次の季節・イベントをチェックアウト時に案内", next:"宿泊者から地域イベント参加者へ", personas:["repeat","independent_first","ties_work"]},
+      {cut:"ドライブ", entry:"車・バイク目的の来訪者", municipal:"定期的な撮影スポット＋カメラマン企画。季節ごとのドライブルートを設定", next:"春・夏・秋など別シーズンの再訪を促す", personas:["independent_first","repeat"]},
+      {cut:"名所観光", entry:"定番観光地を巡る人", municipal:"1日で全部ではなく、複数回来ないと完成しないスタンプラリー", next:"完走特典を地域産品・工芸品・酒など帰宅後も残るものにする", personas:["independent_first","group_intro"]},
+      {cut:"自然", entry:"海、山、里山里海、キャンプ、釣り等を目的とする人", municipal:"観光体験と保全活動を近づける。海岸清掃、植樹、生態観察など", next:"「楽しむ人」から「守る人」へ", personas:["independent_first","support"]},
+      {cut:"推し活", entry:"店、人、祭り、酒蔵、風景など特定対象のファン", municipal:"「珠洲推し」ではなく「この店」「この祭り」「この酒蔵」の推し登録", next:"推している対象から活動・イベント情報を届ける", personas:["repeat","support"]},
+      {cut:"バスツアー", entry:"初訪問者、高齢層、交通手段を持たない人", municipal:"通過型ツアーではなく、人に会う立ち寄りを1か所入れる", next:"ツアー後に「次回は個人で訪ねる場所」を渡す", personas:["group_intro"]},
+    ];
+
+    const CAR_COMMUNITIES = [
+      {name:"石川モーニングCruise", status:"活発・公開募集", target:"車種不問。一般車からスーパーカーまで", area:"白山市：松任海浜公園・徳光ハイウェイオアシス、道の駅しらやまさん、一向一揆の里、道の駅瀬女周辺", frequency:"4～11月、原則月1回、日曜朝～昼", activity:"集合、歓談、早朝ドライブ、道の駅巡回", conditions:"公開イベントは車種不問、途中参加・途中離脱可。通常回は参加表明不要または任意。会費・年齢制限の公表なし。"},
+      {name:"石川コペン ICON", status:"活発・公開募集", target:"ダイハツ・コペン／コペンクーペ中心。他車種も一部イベントでは参加可能", area:"白山市・道の駅瀬女、小松市・日本自動車博物館", frequency:"早朝会は季節開催、博物館ミーティングは原則年1回", activity:"オーナー交流、早朝ミーティング、車両展示、博物館見学、抽選会", conditions:"石川県および近県のコペン愛好者。博物館MTは事前申込。2026年は大人2,000円、小中学生1,000円、未就学児無料。年齢上限なし。"},
+      {name:"Open&Forget", status:"公式サイト更新あり・公開日程不足", target:"ユーノス／マツダ・ロードスター NA・NB・NC・ND", area:"石川県内、北陸・能登方面を含むツーリング", frequency:"ツーリング中心。現在の定例頻度は非公表", activity:"オープン走行、ロードスターツーリング、オーナー交流", conditions:"ロードスターオーナーズクラブ。会費、年齢、入会審査、現行窓口は公開ページから確認できず。1997年結成と説明。"},
+      {name:"金沢ロードスタークラブ／KRC", status:"活動の形跡あり・募集情報限定", target:"マツダ・ロードスター", area:"金沢市を中心に石川県内、能登・加賀方面", frequency:"定例日程は非公表。平日ツーリングの投稿あり", activity:"ツーリング、ミーティング、情報交換", conditions:"過去の公開ミーティングでは非会員も参加可能。現在の会費、年齢、正式な入会条件は確認できず。"},
+      {name:"20th Century Car Meeting／20CCM", status:"活発・年次イベント", target:"主に20世紀、特に1990年代を含む旧車・ネオクラシックカー", area:"小松市・日本自動車博物館", frequency:"原則年1回", activity:"車両展示、オーナー交流、情報交換、チャリティー、関連展示", conditions:"年ごとに対象年式・募集要項を設定。2026年の詳細な参加費・年齢条件は終了後ページからは確認困難。主催は20CCM開催実行委員会。"},
+      {name:"金沢クラシックカーミーティング事務局", status:"活発・年次イベント", target:"昭和期を中心とするクラシックカー。年度によって年式・オリジナル度等の基準あり", area:"小松市・日本自動車博物館", frequency:"原則年1回、夏季", activity:"車両展示、オーナー交流、見学イベント", conditions:"車両参加は事前エントリー型。過年度には違法改造車を対象外とする案内あり。2026年の参加費・年齢制限は一般公開情報から確定できず。見学はイベントにより自由。"},
+      {name:"ハスラーミーティング in 千里浜／ハス爺", status:"活発・公開募集型", target:"スズキ・ハスラー、マツダ・フレアクロスオーバー", area:"羽咋市・千里浜なぎさドライブウェイ", frequency:"2025年、2026年に開催。現状は年1回程度", activity:"オフ会、車両交流、色別撮影、集合走行、カスタム車紹介", conditions:"2026年告知では自由参加・事前エントリー不要。会費・年齢制限の明記なし。天候や砂浜の通行状況に左右される。"},
+      {name:"北陸ジムニー♣️", status:"グループ存続・承認制・イベント継続性不明", target:"歴代ジムニー、パジェロミニ、テリオスキッド等", area:"石川・富山・福井および近隣地域", frequency:"公開イベント履歴は古い。2026年1月に新規あいさつ投稿あり", activity:"情報交換、オフ会相談、車談義", conditions:"非公開／承認制。北陸3県在住者または北陸イベントに参加可能な近県者。加入後の初回あいさつが必要。会費・年齢制限なし／非公表。"},
+      {name:"スバル 北陸", status:"グループ存続・最近の公開イベントなし", target:"スバル車全般、車種不問", area:"石川・富山・福井", frequency:"不定期。直近の公開イベント投稿は2024年まで", activity:"スバルオーナー交流、オフ会相談", conditions:"北陸3県在住のスバルオーナーを対象。掲示板への投稿はメンバー限定で、実質的に一部非公開。会費・年齢制限は非公表。"},
+      {name:"百万石金沢クラシックカー倶楽部", status:"団体・公式Facebook確認、近年活動は公開情報不足", target:"クラシックカー", area:"金沢市中心。過去にはしいのき迎賓館等", frequency:"現在の定例頻度は確認できず", activity:"クラシックカー展示、交流、フェスティバル", conditions:"現在の入会条件、会費、年齢制限は確認できず。過去の公式窓口は石川ヤナセ内の事務局。"},
+      {name:"abarth × fiat北陸", status:"休眠の可能性が高い", target:"FIAT・ABARTH", area:"石川・富山・福井", frequency:"最近の公開開催なし。イベント履歴は主に2018～2019年", activity:"情報交換、プチツーリング", conditions:"掲示板はメンバー限定／非公開。会費・年齢制限は非公表。公開上の登録者は5人。"},
+    ];
+
+    function goToPersona(id) {
+      selectPersona(id);
+      window.setTimeout(() => window.scrollTo({top:$("#personaHead").offsetTop-12,behavior:"smooth"}), 0);
+    }
+
+    function renderRelationshipMap() {
+      $("#relationshipTable tbody").innerHTML = RELATIONSHIP_MAP.map(row => {
+        const links = row.personas.map(id => {
+          const persona = personas.find(item => item.id === id);
+          return persona ? `<button class="persona-link" type="button" data-persona-id="${esc(id)}">${esc(persona.nickname)}</button>` : "";
+        }).join("");
+        return `<tr><td>${esc(row.cut)}</td><td>${esc(row.entry)}</td><td><div class="persona-links">${links}</div></td></tr>`;
+      }).join("");
+      document.querySelectorAll("[data-persona-id]").forEach(button => button.addEventListener("click", () => goToPersona(button.dataset.personaId)));
+    }
+
+    function renderDriveStrategy(persona) {
+      const section = $("#driveStrategySection");
+      const visible = persona.id === "independent_first";
+      section.hidden = !visible;
+    }
+
+    function statusClass(status) {
+      if (/休眠/.test(status)) return "dormant";
+      if (/活発/.test(status)) return "";
+      return "limited";
+    }
+
+    function renderCarCommunities() {
+      const columns = ["団体・主催者","活動状態","対象車種・属性","主な活動エリア","活動頻度","主な活動内容","参加条件・会費・年齢"];
+      $("#carCommunityTable").innerHTML = `<thead><tr>${columns.map(value => `<th>${esc(value)}</th>`).join("")}</tr></thead><tbody>${CAR_COMMUNITIES.map(item => `<tr><td>${esc(item.name)}</td><td><span class="status-chip ${statusClass(item.status)}">${esc(item.status)}</span></td><td>${esc(item.target)}</td><td>${esc(item.area)}</td><td>${esc(item.frequency)}</td><td>${esc(item.activity)}</td><td>${esc(item.conditions)}</td></tr>`).join("")}</tbody>`;
+    }
+
+    function renderSummary() {
+      const o = DB.overall;
+      $("#summaryNote").textContent = `${o.date_min}〜${o.date_max}の震災後回答${o.n}件。関係人口ポテンシャルは県外在住${o.nonresident_n}件を評価対象としています。`;
+      const cards = [
+        ["震災後回答", o.n],
+        ["県外在住", o.nonresident_n],
+        ["1年以内再訪意向", `${o.nonresident_one_year_revisit_pct}%`],
+        ["すずなり2回以上", `${o.nonresident_repeat_pct}%`],
+        ["復興・応援の記述", `${o.nonresident_support_pct}%`],
+        ["高ポテンシャル", `${o.potential_buckets.high.pct}%`],
+      ];
+      $("#summaryGrid").innerHTML = cards.map(([label,value]) => `<div class="kpi"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join("");
+      $("#methodContent").innerHTML = `
+        <p>${esc(DB.meta.definition)}</p>
+        <p><strong>関係継続ポテンシャル：</strong>${esc(DB.meta.score_definition)}</p>
+        <ul>${DB.meta.persona_rules.map(rule => `<li>${esc(rule)}</li>`).join("")}</ul>`;
+    }
+
+    function renderPersonaList(query="") {
+      const needle = query.trim().toLowerCase();
+      const filtered = personas.filter(persona => {
+        const text = [persona.title, persona.nickname, persona.description, persona.narrative, ...persona.keywords.map(k => k.label)].join(" ").toLowerCase();
+        return !needle || text.includes(needle);
+      });
+      $("#personaList").innerHTML = filtered.length ? filtered.map(persona => `
+        <button class="persona-card ${persona.id === activeId ? "active" : ""}" data-id="${persona.id}" type="button">
+          <div class="top">
+            <div><strong>${esc(persona.title)}</strong><small>${esc(persona.nickname)}</small></div>
+            <span class="badge ${potentialClass(persona.potential)}">${esc(persona.potential_label)}</span>
+          </div>
+          <div class="mini-meta">
+            <div><b>${persona.n}</b><span>n</span></div>
+            <div><b>${persona.share}%</b><span>share</span></div>
+            <div><b>${persona.metrics.relationship_score == null ? "—" : persona.metrics.relationship_score}</b><span>score</span></div>
+          </div>
+        </button>`).join("") : `<div class="empty">該当するペルソナがありません。</div>`;
+      document.querySelectorAll(".persona-card").forEach(button => button.addEventListener("click", () => selectPersona(button.dataset.id)));
+    }
+
+    function renderPersonaHead(persona) {
+      const m = persona.metrics;
+      const score = m.relationship_score == null ? "—" : m.relationship_score;
+      $("#personaHead").innerHTML = `
+        <div class="persona-head-grid">
+          <div>
+            <span class="badge ${potentialClass(persona.potential)}">関係人口ポテンシャル：${esc(persona.potential_label)}</span>
+            <h2 class="persona-title">${esc(persona.title)}</h2>
+            <div class="nickname">${esc(persona.nickname)}｜${esc(persona.description)}</div>
+            <p class="narrative">${esc(persona.narrative)}</p>
+          </div>
+          <div class="confidence-box">
+            <div class="num">n=${persona.n}</div>
+            <div class="label">構成比 ${persona.share}%</div>
+            <div class="label">${esc(persona.confidence_label)}</div>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><span>関係継続スコア</span><b>${score}</b></div>
+          <div class="kpi"><span>すずなり2回以上</span><b>${m.repeat_pct}%</b></div>
+          <div class="kpi"><span>1年以内再訪意向</span><b>${m.one_year_revisit_pct}%</b></div>
+          <div class="kpi"><span>能登エリア宿泊</span><b>${m.noto_stay_pct}%</b></div>
+          <div class="kpi"><span>施設NPS</span><b>${num(m.facility_nps)}</b></div>
+          <div class="kpi"><span>施設消費中央値</span><b>${yen(m.facility_spend_median)}</b></div>
+        </div>`;
+    }
+
+    function radarPoint(cx, cy, radius, angle, value=1) {
+      return [cx + Math.cos(angle) * radius * value, cy + Math.sin(angle) * radius * value];
+    }
+
+    function renderRadar(persona) {
+      const entries = Object.entries(persona.radar);
+      const width = 520, height = 430, cx = 260, cy = 205, radius = 145;
+      const angleFor = index => -Math.PI / 2 + (Math.PI * 2 * index / entries.length);
+      const polygon = points => points.map(point => point.join(",")).join(" ");
+      const grids = [0.2,0.4,0.6,0.8,1].map(level => {
+        const points = entries.map((_,index) => radarPoint(cx,cy,radius,angleFor(index),level));
+        return `<polygon points="${polygon(points)}" fill="none" stroke="#E2E8F0" stroke-width="1"/>`;
+      }).join("");
+      const axes = entries.map((_,index) => {
+        const end = radarPoint(cx,cy,radius,angleFor(index),1);
+        return `<line x1="${cx}" y1="${cy}" x2="${end[0]}" y2="${end[1]}" stroke="#CBD5E0" stroke-width="1"/>`;
+      }).join("");
+      const dataPoints = entries.map(([_,value],index) => radarPoint(cx,cy,radius,angleFor(index),Math.max(0,Math.min(100,value))/100));
+      const labels = entries.map(([label,value],index) => {
+        const [x,y] = radarPoint(cx,cy,radius+36,angleFor(index),1);
+        const anchor = x < cx-10 ? "end" : x > cx+10 ? "start" : "middle";
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" fill="#4A5568" font-size="13" font-weight="800">${esc(label)} ${value}%</text>`;
+      }).join("");
+      const dots = dataPoints.map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#38B2AC" stroke="white" stroke-width="2"/>`).join("");
+      $("#radarWrap").innerHTML = `
+        <svg id="radarChart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(persona.nickname)}の関係継続レーダー">
+          ${grids}${axes}
+          <polygon points="${polygon(dataPoints)}" fill="rgba(79,209,197,.28)" stroke="#38B2AC" stroke-width="3"/>
+          ${dots}${labels}
+        </svg>
+        <div class="radar-values">${entries.map(([label,value]) => `<div><span>${esc(label)}</span><b>${value}%</b></div>`).join("")}</div>`;
+    }
+
+    const rankingLabels = {purpose:"訪問目的",info:"情報源",transport:"施設までの交通",before:"前に訪れた場所",after:"後に訪れる場所"};
+    function renderRankings(persona) {
+      $("#rankingTabs").innerHTML = Object.entries(rankingLabels).map(([key,label]) => `<button type="button" class="tab ${key===activeRanking?"active":""}" data-key="${key}" role="tab">${esc(label)}</button>`).join("");
+      document.querySelectorAll("#rankingTabs .tab").forEach(button => button.addEventListener("click", () => { activeRanking = button.dataset.key; renderRankings(persona); }));
+      const items = persona.rankings[activeRanking] || [];
+      const max = Math.max(1,...items.map(item => item.pct));
+      $("#rankingBars").innerHTML = items.length ? items.map(item => `
+        <div class="bar-row">
+          <div class="bar-label"><b>${esc(item.label)}</b><span>${item.pct}% <small>(n=${item.count})</small></span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,item.pct/max*100)}%"></div></div>
+        </div>`).join("") : `<div class="empty">この層では回答がありません。</div>`;
+    }
+
+    function renderProfile(persona) {
+      const labels = {age:"年代",origin:"発地",companion:"同行者",income:"世帯年収",behavior:"主な行動",facility_visit:"訪問実績"};
+      $("#profileGrid").innerHTML = Object.entries(labels).map(([key,label]) => `<div class="profile-item"><span>${esc(label)}</span><b>${esc(persona.profile[key] || "情報なし")}</b></div>`).join("");
+    }
+
+    const list = values => `<ul>${values.map(value => `<li>${esc(value)}</li>`).join("")}</ul>`;
+    function renderTables(persona) {
+      $("#psychologyTable").innerHTML = `<tbody><tr><th>心理</th><td>${list(persona.psychology)}</td></tr><tr><th>痛点</th><td>${list(persona.pain)}</td></tr><tr><th>訴求</th><td>${list(persona.appeal)}</td></tr></tbody>`;
+      $("#jobsTable").innerHTML = `<tbody><tr><th>機能的JOB</th><td>${list(persona.jobs.functional)}</td></tr><tr><th>情緒的JOB</th><td>${list(persona.jobs.emotional)}</td></tr><tr><th>社会的JOB</th><td>${list(persona.jobs.social)}</td></tr></tbody>`;
+    }
+
+    function renderActions(persona) {
+      $("#actionList").innerHTML = persona.actions.map((action,index) => `
+        <div class="action-card">
+          <div class="action-num">${index+1}</div>
+          <div><strong>${esc(action.title)}</strong><p>${esc(action.impact)}</p><small>対象JOB：${esc(action.job)}</small></div>
+          <span class="effort">${esc(action.effort)}</span>
+        </div>`).join("");
+    }
+
+    function renderKeywordsAndVoices(persona) {
+      $("#keywordList").innerHTML = persona.keywords.map(keyword => `<span class="tag">${esc(keyword.label)} <small>${keyword.count}</small></span>`).join("") || `<div class="empty">代表語なし</div>`;
+      $("#voiceList").innerHTML = persona.voices.map(voice => `<div class="quote">${esc(voice)}</div>`).join("");
+    }
+
+    function renderComparison() {
+      $("#comparisonTable").innerHTML = `
+        <thead><tr><th>ペルソナ</th><th>n</th><th>構成比</th><th>継続スコア</th><th>2回以上</th><th>1年以内再訪</th><th>施設消費</th><th>施設NPS</th></tr></thead>
+        <tbody>${personas.map(persona => `<tr data-id="${persona.id}"><td>${esc(persona.nickname)}</td><td>${persona.n}</td><td>${persona.share}%</td><td>${persona.metrics.relationship_score ?? "対象外"}</td><td>${persona.metrics.repeat_pct}%</td><td>${persona.metrics.one_year_revisit_pct}%</td><td>${yen(persona.metrics.facility_spend_median)}</td><td>${num(persona.metrics.facility_nps)}</td></tr>`).join("")}</tbody>`;
+      document.querySelectorAll("#comparisonTable tr[data-id]").forEach(row => row.addEventListener("click", () => { selectPersona(row.dataset.id); window.scrollTo({top:$("#personaHead").offsetTop-12,behavior:"smooth"}); }));
+    }
+
+    function initialChatMessage(persona) {
+      const score = persona.metrics.relationship_score == null ? "県内在住のため関係人口スコアの対象外" : `関係継続スコアは${persona.metrics.relationship_score}`;
+      return `こんにちは。${persona.nickname}です。\n私は「${persona.title}」という合成人格です。${score}。\n関係人口になりそうか、再訪のきっかけ、痛点、現実的な施策について聞いてください。`;
+    }
+
+    function resetChat() {
+      const persona = currentPersona();
+      $("#chatMessages").innerHTML = `<div class="msg bot">${esc(initialChatMessage(persona))}</div>`;
+      $("#chatTitle").textContent = `${persona.nickname} と話す`;
+      $("#quickQuestions").innerHTML = ["関係人口になりそう？","最初の一手は？","不満点は？","再訪を促すには？","交通面の課題は？","JOBを教えて"].map(question => `<button class="quick" type="button">${esc(question)}</button>`).join("");
+      document.querySelectorAll(".quick").forEach(button => button.addEventListener("click", () => sendQuestion(button.textContent)));
+    }
+
+    function topRanking(persona,key) {
+      const item = (persona.rankings[key] || [])[0];
+      return item ? `${item.label}（${item.pct}%）` : "明確な上位回答なし";
+    }
+
+    function answerQuestion(text, persona) {
+      const m = persona.metrics;
+      if (/関係人口|可能|なりそう|ポテンシャル/.test(text)) {
+        if (persona.potential === "local") return `この層は石川県内在住なので、関係人口ではなく地域内の橋渡し層です。すずなり2回以上が${m.repeat_pct}%あり、県外の友人を連れてくる案内役や情報更新の協力者として期待できます。`;
+        return `ポテンシャルは「${persona.potential_label}」、代理スコアは${m.relationship_score}です。すずなり2回以上${m.repeat_pct}%、1年以内再訪意向${m.one_year_revisit_pct}%、能登宿泊${m.noto_stay_pct}%が根拠です。これは直接意向ではなく、再訪・縁・応援等からの推定です。`;
+      }
+      if (/最初|一手|施策|アプローチ|何を/.test(text)) {
+        const action = persona.actions[0];
+        return `最初の一手は「${action.title}」です。${action.impact}ための${action.effort}施策です。大きな会員制度より、現地で一つのQR接点を渡し、その後の再訪・購入を測る方が現実的です。`;
+      }
+      if (/不満|痛点|困|課題/.test(text)) return `主な痛点は、\n・${persona.pain.join("\n・")}\nです。現在の不便あり回答は${m.inconvenience_pct}%ですが、自由記述には潜在的な迷いも含まれます。`;
+      if (/再訪|また来|リピート/.test(text)) return `1年以内再訪意向は${m.one_year_revisit_pct}%、すでに2回以上は${m.repeat_pct}%です。次回の具体的な季節・目的・交通を一つ示し、${persona.actions[Math.min(1,persona.actions.length-1)].title}につなぐのが有効です。`;
+      if (/交通|バス|アクセス|移動/.test(text)) return `施設までの交通は${topRanking(persona,"transport")}が最多です。${persona.pain.find(value => /交通|バス|移動|営業/.test(value)) || persona.pain[0]}。目的地名で理解できる案内と、次の便までの過ごし方をセットにする必要があります。`;
+      if (/消費|買|土産|商品/.test(text)) return `施設消費中央値は${yen(m.facility_spend_median)}、旅行総消費中央値は${yen(m.trip_spend_median)}です。値引きより、商品が誰の仕事や復興につながるかを短いカードで示す方が、継続購入へつながります。`;
+      if (/job|ジョブ|求め/.test(text)) return `機能的JOB：${persona.jobs.functional.join("／")}\n情緒的JOB：${persona.jobs.emotional.join("／")}\n社会的JOB：${persona.jobs.social.join("／")}`;
+      if (/情報|発信|sns/.test(text.toLowerCase())) return `情報源の上位は${topRanking(persona,"info")}です。全員に同じ復興情報を送るのではなく、「次に行ける場所」「今買えるもの」「次の季節」を1画面で示すと行動に変わりやすくなります。`;
+      return `${persona.narrative}\n\n聞き方の例：関係人口になりそう？／最初の一手は？／再訪を促すには？／交通面の課題は？`;
+    }
+
+    function sendQuestion(text) {
+      const question = text.trim();
+      if (!question) return;
+      const messages = $("#chatMessages");
+      messages.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(question)}</div>`);
+      messages.insertAdjacentHTML("beforeend", `<div class="msg bot">${esc(answerQuestion(question,currentPersona()))}</div>`);
+      messages.scrollTop = messages.scrollHeight;
+      $("#chatInput").value = "";
+    }
+
+    async function copyPrompt() {
+      const persona = currentPersona();
+      const prompt = `あなたは「${persona.nickname}（${persona.title}）」のペルソナです。${persona.description}\n指標：n=${persona.n}、1年以内再訪${persona.metrics.one_year_revisit_pct}%、2回以上${persona.metrics.repeat_pct}%、能登宿泊${persona.metrics.noto_stay_pct}%、施設NPS${persona.metrics.facility_nps}。\n心理：${persona.psychology.join("、")}\n痛点：${persona.pain.join("、")}\nこの根拠の範囲を超えず、珠洲との継続関係を深める施策について会話してください。`;
+      try { await navigator.clipboard.writeText(prompt); $("#copyPrompt").textContent = "コピーしました"; }
+      catch { const area=document.createElement("textarea"); area.value=prompt; document.body.appendChild(area); area.select(); document.execCommand("copy"); area.remove(); $("#copyPrompt").textContent="コピーしました"; }
+      setTimeout(() => $("#copyPrompt").textContent="AI用プロンプトをコピー",1400);
+    }
+
+    function renderInsights() {
+      const o = DB.overall;
+      $("#insightsBody").innerHTML = `
+        <div class="insight-answer">${esc(DB.insights.answer)}</div>
+        <div class="insight-grid">
+          <div class="insight-stat"><b>${o.nonresident_one_year_revisit_pct}%</b><span>県外客の1年以内再訪意向</span></div>
+          <div class="insight-stat"><b>${o.nonresident_repeat_pct}%</b><span>県外客のすずなり2回以上</span></div>
+          <div class="insight-stat"><b>${o.nonresident_support_pct}%</b><span>県外客の復興・応援記述</span></div>
+        </div>
+        <h3>判断材料</h3>${list(DB.insights.bullets)}
+        <h3>読み方の注意</h3>${list(DB.insights.limitations)}`;
+    }
+
+    function selectPersona(id) {
+      activeId = id;
+      activeRanking = "purpose";
+      const persona = currentPersona();
+      renderPersonaList($("#personaSearch").value);
+      renderPersonaHead(persona);
+      renderRadar(persona);
+      renderRankings(persona);
+      renderProfile(persona);
+      renderTables(persona);
+      renderActions(persona);
+      renderDriveStrategy(persona);
+      renderKeywordsAndVoices(persona);
+      resetChat();
+    }
+
+    $("#personaSearch").addEventListener("input", event => renderPersonaList(event.target.value));
+    $("#chatForm").addEventListener("submit", event => { event.preventDefault(); sendQuestion($("#chatInput").value); });
+    $("#resetChat").addEventListener("click", resetChat);
+    $("#resetChatTop").addEventListener("click", resetChat);
+    $("#copyPrompt").addEventListener("click", copyPrompt);
+    $("#printButton").addEventListener("click", () => window.print());
+    $("#openInsights").addEventListener("click", () => $("#insightsModal").classList.remove("hidden"));
+    $("#closeInsights").addEventListener("click", () => $("#insightsModal").classList.add("hidden"));
+    $("#insightsModal").addEventListener("click", event => { if (event.target.id === "insightsModal") event.currentTarget.classList.add("hidden"); });
+    $("#openCarCommunities").addEventListener("click", () => $("#carCommunitiesModal").classList.remove("hidden"));
+    $("#openCarCommunitiesInline").addEventListener("click", () => $("#carCommunitiesModal").classList.remove("hidden"));
+    $("#closeCarCommunities").addEventListener("click", () => $("#carCommunitiesModal").classList.add("hidden"));
+    $("#carCommunitiesModal").addEventListener("click", event => { if (event.target.id === "carCommunitiesModal") event.currentTarget.classList.add("hidden"); });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") document.querySelectorAll(".modal-overlay").forEach(modal => modal.classList.add("hidden"));
+    });
+
+    renderRelationshipMap();
+    renderSummary();
+    renderInsights();
+    renderCarCommunities();
+    renderPersonaList();
+    renderComparison();
+    selectPersona(activeId);
+    $("#sourceFooter").innerHTML = `データ：<a href="${esc(DB.meta.source_url)}" target="_blank" rel="noopener">${esc(DB.meta.source_name)}</a>｜スナップショット ${esc(DB.overall.date_max)}｜分析生成 ${esc(DB.meta.generated_at)}<br>ペルソナは個人を表すものではなく、複数回答を集約した分析上の合成人格です。`;
+  </script>
+</body>
+</html>
