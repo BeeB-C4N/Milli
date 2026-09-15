@@ -108,13 +108,43 @@
       border-radius: .75rem; padding: 0 36px 0 12px; color: var(--ink);
       box-shadow: 0 1px 2px rgba(0,0,0,.04);
     }
+    .multi-select { position: relative; }
+    .multi-trigger {
+      width: 100%; height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      border: 1px solid #CBD5E0; background: #fff; color: var(--ink); border-radius: .75rem;
+      padding: 0 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); text-align: left;
+    }
+    .multi-trigger:hover, .multi-trigger.open { border-color: var(--gold-deep); }
+    .multi-trigger-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .multi-trigger svg { width: 18px; height: 18px; flex: 0 0 auto; transition: transform .2s ease; }
+    .multi-trigger.open svg { transform: rotate(180deg); }
+    .multi-panel {
+      position: absolute; z-index: 60; top: calc(100% + 7px); left: 0;
+      width: min(420px, calc(100vw - 40px)); padding: 12px;
+      background: #fff; border: 1px solid var(--line); border-radius: .9rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,.12), 0 10px 10px -5px rgba(0,0,0,.05);
+    }
+    .multi-panel[hidden] { display: none; }
+    .facility-search {
+      width: 100%; height: 42px; border: 1px solid #CBD5E0; border-radius: .75rem;
+      padding: 0 12px; color: var(--ink); background: #fff;
+    }
+    .multi-actions { display: flex; justify-content: space-between; gap: 8px; padding: 9px 2px 7px; border-bottom: 1px solid var(--line); }
+    .multi-action { border: 0; background: transparent; color: var(--gold-deep); font-size: 11px; font-weight: 700; padding: 3px; }
+    .multi-action:hover { text-decoration: underline; }
+    .facility-options { max-height: 280px; overflow-y: auto; padding: 6px 0; scrollbar-width: thin; }
+    .facility-option { display: flex; align-items: flex-start; gap: 9px; padding: 8px 7px; border-radius: .6rem; font-size: 12px; cursor: pointer; }
+    .facility-option:hover { background: var(--gold-pale); }
+    .facility-option input { width: 17px; height: 17px; margin: 1px 0 0; flex: 0 0 auto; accent-color: var(--gold-deep); }
+    .facility-option span { line-height: 1.4; }
+    .facility-list-empty { margin: 0; padding: 20px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+    .facility-option-summary { margin: 7px 2px 0; color: var(--muted); font-size: 10px; text-align: right; }
     .field input[type="date"] { padding-right: 10px; }
     .date-pair { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .date-pair[hidden] { display: none; }
     .date-pair .field { min-width: 0; }
     details.attribute-details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 13px; }
     details.attribute-details summary { width: fit-content; font-weight: 700; font-size: 14px; cursor: pointer; }
-    .attribute-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; margin-top: 13px; }
+    .attribute-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 13px; }
     .filter-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
     .active-summary { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
     .chip { background: var(--gold-pale); border: 1px solid #B2F5EA; color: #2C7A7B; border-radius: 999px; padding: 3px 9px; font-size: 11px; }
@@ -303,8 +333,22 @@
             <select id="city-filter"><option value="">すべての市町</option></select>
           </div>
           <div class="field">
-            <label for="facility-filter">施設</label>
-            <select id="facility-filter"><option value="">すべての施設</option></select>
+            <label id="facility-filter-label">施設（複数選択）</label>
+            <div class="multi-select" id="facility-multi-select">
+              <button class="multi-trigger" id="facility-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="facility-filter-label facility-trigger-label">
+                <span class="multi-trigger-label" id="facility-trigger-label">すべての施設</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg>
+              </button>
+              <div class="multi-panel" id="facility-panel" hidden>
+                <input class="facility-search" id="facility-search" type="search" placeholder="施設名を検索" autocomplete="off" aria-label="施設名を検索">
+                <div class="multi-actions">
+                  <button class="multi-action" id="facility-select-visible" type="button">表示中をすべて選択</button>
+                  <button class="multi-action" id="facility-clear" type="button">選択を解除</button>
+                </div>
+                <div class="facility-options" id="facility-options" role="listbox" aria-multiselectable="true"></div>
+                <p class="facility-option-summary" id="facility-option-summary"></p>
+              </div>
+            </div>
           </div>
           <div class="field">
             <label for="period-filter">期間</label>
@@ -331,6 +375,7 @@
             <div class="field"><label for="age-filter">年代</label><select id="age-filter"><option value="">すべて</option></select></div>
             <div class="field"><label for="companion-filter">同行者</label><select id="companion-filter"><option value="">すべて</option></select></div>
             <div class="field"><label for="nights-filter">石川県内宿泊数</label><select id="nights-filter"><option value="">すべて</option></select></div>
+            <div class="field"><label for="lodging-area-filter">宿泊エリア</label><select id="lodging-area-filter"><option value="">すべて</option></select></div>
             <div class="field"><label for="income-filter">世帯年収</label><select id="income-filter"><option value="">すべて</option></select></div>
             <div class="field"><label for="gender-filter">性別</label><select id="gender-filter"><option value="">すべて</option></select></div>
           </div>
@@ -379,6 +424,7 @@
               <option value="prefecture">居住都道府県</option>
               <option value="companionGroup">同行者</option>
               <option value="ishikawaNights">石川県内宿泊数</option>
+              <option value="lodgingArea">宿泊エリア</option>
               <option value="income">世帯年収</option>
               <option value="gender">性別</option>
             </select>
@@ -415,7 +461,7 @@
 
     const DATA_SHEET_ID = '1riK_ufkmF6Ql7Tujwlm22FtHOLz7hwUzf6Zi6JAG_QI';
     const CITY_SHEET_ID = '1IwKFT7ZiNYK4RStuF-1vN3EDf4_L9ohhbC7aeawk10s';
-    const DATA_QUERY = 'select A,B,C,E,F,I,O,P,Q,X,AI,AJ,AK,AM';
+    const DATA_QUERY = 'select A,B,C,E,F,G,I,O,P,Q,X,AI,AJ,AK,AM';
     const CITY_QUERY = 'select B,C,F';
     const LOCAL_DATA_FILE = './milli.csv';
     const LOCAL_CITY_FILE = './municipalities.csv';
@@ -449,6 +495,7 @@
     const STANDARD_COMPANIONS = ['自分ひとり','夫婦2人','恋人','友人','親','小学生以下連れの家族','中学生以上連れの家族','中学生以下連れの家族','職場の同僚','団体旅行','学校関係（修学旅行・社会科見学等）'];
     const AGE_ORDER = ['10歳未満','10代','20代','30代','40代','50代','60代','70代','80歳以上','不明'];
     const NIGHT_ORDER = ['石川県内には宿泊しない','1泊','2泊','3泊','4泊以上'];
+    const LODGING_AREA_ORDER = ['石川県内には宿泊しない','金沢エリア','加賀エリア','能登エリア','白山エリア'];
     const INCOME_ORDER = ['100万円未満','100万円以上 200万円未満','200万円以上 300万円未満','300万円以上 400万円未満','400万円以上 500万円未満','500万円以上 600万円未満','600万円以上 700万円未満','700万円以上 800万円未満','800万円以上 900万円未満','900万円以上 1,000万円未満','1,000万円以上 1,200万円未満','1,200万円以上 1,500万円未満','1,500万円以上'];
 
     const iconPaths = {
@@ -459,8 +506,8 @@
     };
 
     const state = {
-      rows: [], cityMap: new Map(), selectedMetric: 'local', latestDate: null,
-      filters: { city:'', facility:'', period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', income:'', gender:'' }
+      rows: [], cityMap: new Map(), facilityOptions: [], selectedMetric: 'local', latestDate: null,
+      filters: { city:'', facilities:[], period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', lodgingArea:'', income:'', gender:'' }
     };
 
     const $ = id => document.getElementById(id);
@@ -494,6 +541,15 @@
       return STANDARD_COMPANIONS.includes(value) ? value : 'その他';
     }
 
+    function normalizeLodgingArea(value) {
+      const text = String(value || '').trim();
+      if (text.includes('石川県内には宿泊しない')) return '石川県内には宿泊しない';
+      for (const area of ['金沢エリア','加賀エリア','能登エリア','白山エリア']) {
+        if (text.includes(area)) return area;
+      }
+      return text;
+    }
+
     function loadGviz(sheetId, query) {
       return new Promise((resolve, reject) => {
         const callback = `milliGviz_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -525,15 +581,15 @@
         const c = row.c || [];
         const date = parseGvizDate(c[2]?.v ?? c[2]?.f);
         const facility = cellValue(c[1]);
-        const birthYear = Number(c[11]?.v ?? c[11]?.f);
+        const birthYear = Number(c[12]?.v ?? c[12]?.f);
         return {
           area: cellValue(c[0]), facility, date,
-          tripNights: cellValue(c[3]), ishikawaNights: cellValue(c[4]), companion: cellValue(c[5]),
-          lodgingRaw: cellValue(c[6]), transportRaw: cellValue(c[7]), localRaw: cellValue(c[8]), facilityRaw: cellValue(c[9]),
-          gender: cellValue(c[10]), birthYear: Number.isFinite(birthYear) ? birthYear : null,
-          prefecture: cellValue(c[12]), income: cellValue(c[13]),
+          tripNights: cellValue(c[3]), ishikawaNights: cellValue(c[4]), lodgingArea: normalizeLodgingArea(cellValue(c[5])), companion: cellValue(c[6]),
+          lodgingRaw: cellValue(c[7]), transportRaw: cellValue(c[8]), localRaw: cellValue(c[9]), facilityRaw: cellValue(c[10]),
+          gender: cellValue(c[11]), birthYear: Number.isFinite(birthYear) ? birthYear : null,
+          prefecture: cellValue(c[13]), income: cellValue(c[14]),
           city: cityMap.get(normalizeName(facility)) || '',
-          ageGroup: ageGroup(birthYear, date), companionGroup: companionGroup(cellValue(c[5]))
+          ageGroup: ageGroup(birthYear, date), companionGroup: companionGroup(cellValue(c[6]))
         };
       }).filter(row => row.date && row.facility);
       return { rows, cityMap };
@@ -562,7 +618,7 @@
       master.forEach(r => { if (r[mf] && r[mc]) cityMap.set(normalizeName(r[mf]), r[mc].trim()); });
       const data = parseCSV(dataText); const h = data.shift() || [];
       const idx = {
-        area:h.indexOf('エリア'), facility:h.indexOf('施設'), date:h.indexOf('タイムスタンプ'), tripNights:4, ishikawaNights:5,
+        area:h.indexOf('エリア'), facility:h.indexOf('施設'), date:h.indexOf('タイムスタンプ'), tripNights:4, ishikawaNights:5, lodgingArea:6,
         companion:8, lodgingRaw:14, transportRaw:15, localRaw:16, facilityRaw:23,
         gender:34, birthYear:35, prefecture:36, income:38
       };
@@ -570,7 +626,7 @@
         const date = parseGvizDate(r[idx.date]); const facility = (r[idx.facility] || '').trim(); const birthYear = Number(r[idx.birthYear]);
         const companion = (r[idx.companion] || '').trim();
         return {
-          area:(r[idx.area]||'').trim(), facility, date, tripNights:(r[idx.tripNights]||'').trim(), ishikawaNights:(r[idx.ishikawaNights]||'').trim(), companion,
+          area:(r[idx.area]||'').trim(), facility, date, tripNights:(r[idx.tripNights]||'').trim(), ishikawaNights:(r[idx.ishikawaNights]||'').trim(), lodgingArea:normalizeLodgingArea(r[idx.lodgingArea]), companion,
           lodgingRaw:(r[idx.lodgingRaw]||'').trim(), transportRaw:(r[idx.transportRaw]||'').trim(), localRaw:(r[idx.localRaw]||'').trim(), facilityRaw:(r[idx.facilityRaw]||'').trim(),
           gender:(r[idx.gender]||'').trim(), birthYear:Number.isFinite(birthYear)?birthYear:null, prefecture:(r[idx.prefecture]||'').trim(), income:(r[idx.income]||'').trim(),
           city:cityMap.get(normalizeName(facility))||'', ageGroup:ageGroup(birthYear,date), companionGroup:companionGroup(companion)
@@ -623,30 +679,100 @@
       populateSelect($('age-filter'), unique('ageGroup', AGE_ORDER));
       populateSelect($('companion-filter'), unique('companionGroup', [...STANDARD_COMPANIONS,'その他','不明']));
       populateSelect($('nights-filter'), unique('ishikawaNights', NIGHT_ORDER));
+      populateSelect($('lodging-area-filter'), unique('lodgingArea', LODGING_AREA_ORDER));
       populateSelect($('income-filter'), unique('income', INCOME_ORDER));
       populateSelect($('gender-filter'), unique('gender', ['女','男','その他','無回答']));
     }
 
     function refreshFacilities() {
-      const city = $('city-filter').value;
-      const facilities = [...new Set(state.rows.filter(r => !city || r.city === city).map(r => r.facility).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
-      populateSelect($('facility-filter'), facilities, 'すべての施設');
+      const city = state.filters.city;
+      state.facilityOptions = [...new Set(state.rows.filter(r => !city || r.city === city).map(r => r.facility).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+      const available = new Set(state.facilityOptions);
+      state.filters.facilities = state.filters.facilities.filter(facility => available.has(facility));
+      $('facility-search').value = '';
+      renderFacilityOptions();
+      updateFacilityTrigger();
+    }
+
+    function visibleFacilityOptions() {
+      const query = normalizeName($('facility-search').value);
+      return query ? state.facilityOptions.filter(facility => normalizeName(facility).includes(query)) : state.facilityOptions;
+    }
+
+    function renderFacilityOptions() {
+      const facilities = visibleFacilityOptions();
+      const selected = new Set(state.filters.facilities);
+      $('facility-options').innerHTML = facilities.length ? facilities.map((facility, index) => `
+        <label class="facility-option">
+          <input type="checkbox" value="${escapeHTML(facility)}" ${selected.has(facility) ? 'checked' : ''} aria-label="${escapeHTML(facility)}">
+          <span>${escapeHTML(facility)}</span>
+        </label>`).join('') : '<p class="facility-list-empty">該当する施設がありません</p>';
+      $('facility-option-summary').textContent = `${num(facilities.length)}施設を表示・${num(state.filters.facilities.length)}施設を選択`;
+    }
+
+    function updateFacilityTrigger() {
+      const selected = state.filters.facilities;
+      $('facility-trigger-label').textContent = selected.length === 0 ? 'すべての施設' : selected.length === 1 ? selected[0] : `${selected.length}施設を選択中`;
+      $('facility-trigger').title = selected.length ? selected.join('、') : 'すべての施設';
+    }
+
+    function toggleFacilityPanel(force) {
+      const panel = $('facility-panel');
+      const willOpen = typeof force === 'boolean' ? force : panel.hidden;
+      panel.hidden = !willOpen;
+      $('facility-trigger').classList.toggle('open', willOpen);
+      $('facility-trigger').setAttribute('aria-expanded', String(willOpen));
+      if (willOpen) setTimeout(() => $('facility-search').focus(), 0);
+    }
+
+    function applyFacilitySelection() {
+      updateFacilityTrigger();
+      renderFacilityOptions();
+      updateDashboard();
     }
 
     function bindEvents() {
       if (document.body.dataset.bound) return;
       document.body.dataset.bound = '1';
       const mapping = {
-        'city-filter':'city','facility-filter':'facility','period-filter':'period','date-from':'from','date-to':'to',
+        'city-filter':'city','period-filter':'period','date-from':'from','date-to':'to',
         'pref-filter':'prefecture','age-filter':'ageGroup','companion-filter':'companionGroup','nights-filter':'ishikawaNights',
-        'income-filter':'income','gender-filter':'gender'
+        'lodging-area-filter':'lodgingArea','income-filter':'income','gender-filter':'gender'
       };
       Object.entries(mapping).forEach(([id,key]) => $(id).addEventListener('change', () => {
         state.filters[key] = $(id).value;
-        if (id === 'city-filter') { refreshFacilities(); state.filters.facility = $('facility-filter').value; }
+        if (id === 'city-filter') refreshFacilities();
         if (id === 'period-filter') updatePeriodInputs();
         updateDashboard();
       }));
+      $('facility-trigger').addEventListener('click', () => toggleFacilityPanel());
+      $('facility-search').addEventListener('input', renderFacilityOptions);
+      $('facility-options').addEventListener('change', event => {
+        if (!event.target.matches('input[type="checkbox"]')) return;
+        const selected = new Set(state.filters.facilities);
+        event.target.checked ? selected.add(event.target.value) : selected.delete(event.target.value);
+        state.filters.facilities = [...selected];
+        updateFacilityTrigger();
+        $('facility-option-summary').textContent = `${num(visibleFacilityOptions().length)}施設を表示・${num(state.filters.facilities.length)}施設を選択`;
+        updateDashboard();
+      });
+      $('facility-select-visible').addEventListener('click', () => {
+        state.filters.facilities = [...new Set([...state.filters.facilities, ...visibleFacilityOptions()])];
+        applyFacilitySelection();
+      });
+      $('facility-clear').addEventListener('click', () => {
+        state.filters.facilities = [];
+        applyFacilitySelection();
+      });
+      document.addEventListener('click', event => {
+        if (!$('facility-multi-select').contains(event.target)) toggleFacilityPanel(false);
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !$('facility-panel').hidden) {
+          toggleFacilityPanel(false);
+          $('facility-trigger').focus();
+        }
+      });
       $('reset-btn').addEventListener('click', resetFilters);
       $('reload-btn').addEventListener('click', () => location.reload());
       $('retry-btn').addEventListener('click', loadData);
@@ -671,9 +797,9 @@
     }
 
     function resetFilters() {
-      state.filters = { city:'', facility:'', period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', income:'', gender:'' };
-      ['city-filter','facility-filter','period-filter','date-from','date-to','pref-filter','age-filter','companion-filter','nights-filter','income-filter','gender-filter'].forEach(id => $(id).value='');
-      $('period-filter').value='all'; refreshFacilities(); updatePeriodInputs(); updateDashboard();
+      state.filters = { city:'', facilities:[], period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', lodgingArea:'', income:'', gender:'' };
+      ['city-filter','period-filter','date-from','date-to','pref-filter','age-filter','companion-filter','nights-filter','lodging-area-filter','income-filter','gender-filter'].forEach(id => $(id).value='');
+      $('period-filter').value='all'; refreshFacilities(); toggleFacilityPanel(false); updatePeriodInputs(); updateDashboard();
     }
 
     function getDateBounds() {
@@ -693,11 +819,12 @@
       const f = state.filters; const bounds = getDateBounds();
       return state.rows.filter(row => {
         if (f.city && row.city !== f.city) return false;
-        if (f.facility && row.facility !== f.facility) return false;
+        if (f.facilities.length && !f.facilities.includes(row.facility)) return false;
         if (f.prefecture && row.prefecture !== f.prefecture) return false;
         if (f.ageGroup && row.ageGroup !== f.ageGroup) return false;
         if (f.companionGroup && row.companionGroup !== f.companionGroup) return false;
         if (f.ishikawaNights && row.ishikawaNights !== f.ishikawaNights) return false;
+        if (f.lodgingArea && row.lodgingArea !== f.lodgingArea) return false;
         if (f.income && row.income !== f.income) return false;
         if (f.gender && row.gender !== f.gender) return false;
         if (bounds.from && row.date < bounds.from) return false;
@@ -733,7 +860,7 @@
 
     function updateScope(rows) {
       const f=state.filters; const dates=rows.map(r=>r.date).sort((a,b)=>a-b);
-      $('scope-title').textContent = f.facility || f.city || '石川県全体';
+      $('scope-title').textContent = f.facilities.length === 1 ? f.facilities[0] : f.facilities.length > 1 ? `${f.facilities.length}施設の合算` : f.city || '石川県全体';
       $('scope-text').textContent = dates.length ? `${formatDate(dates[0])}〜${formatDate(dates[dates.length-1])}` : '該当する回答はありません';
       $('response-count').textContent = num(rows.length);
     }
@@ -797,7 +924,7 @@
       const breakdown=$('breakdown-select').value; const field=METRICS[state.selectedMetric].field; const groups=new Map();
       rows.forEach(row=>{const key=row[breakdown]||'不明';const value=RANGE_VALUES.get(row[field]);if(!Number.isFinite(value))return;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(value);});
       let items=[...groups.entries()].map(([label,values])=>({label,...stats(values)})).filter(x=>x.n>=5);
-      const natural=breakdown==='ageGroup'?AGE_ORDER:breakdown==='ishikawaNights'?NIGHT_ORDER:breakdown==='income'?INCOME_ORDER:breakdown==='gender'?['女','男','その他','無回答']:null;
+      const natural=breakdown==='ageGroup'?AGE_ORDER:breakdown==='ishikawaNights'?NIGHT_ORDER:breakdown==='lodgingArea'?LODGING_AREA_ORDER:breakdown==='income'?INCOME_ORDER:breakdown==='gender'?['女','男','その他','無回答']:null;
       if(natural)items.sort((a,b)=>(natural.indexOf(a.label)<0?999:natural.indexOf(a.label))-(natural.indexOf(b.label)<0?999:natural.indexOf(b.label)));
       else items.sort((a,b)=>b.avg-a.avg);
       if(breakdown==='prefecture')items=items.slice(0,15);
@@ -810,8 +937,9 @@
 
     function renderActiveFilters() {
       const chips=[]; const f=state.filters;
-      const labels={city:'市町',facility:'施設',prefecture:'居住地',ageGroup:'年代',companionGroup:'同行者',ishikawaNights:'宿泊数',income:'世帯年収',gender:'性別'};
+      const labels={city:'市町',prefecture:'居住地',ageGroup:'年代',companionGroup:'同行者',ishikawaNights:'宿泊数',lodgingArea:'宿泊エリア',income:'世帯年収',gender:'性別'};
       Object.entries(labels).forEach(([key,label])=>{if(f[key])chips.push(`${label}：${f[key]}`);});
+      if (f.facilities.length) chips.push(f.facilities.length <= 2 ? `施設：${f.facilities.join('、')}` : `施設：${f.facilities.length}施設を選択`);
       const periodText=$('period-filter').selectedOptions[0]?.textContent;
       if(f.period!=='all')chips.push(f.period==='custom'?`期間：${f.from||'指定なし'}〜${f.to||'指定なし'}`:`期間：${periodText}`);
       $('active-summary').innerHTML=chips.length?chips.map(x=>`<span class="chip">${escapeHTML(x)}</span>`).join(''):'<span class="chip">すべての回答</span>';
