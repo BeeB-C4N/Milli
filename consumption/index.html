@@ -171,10 +171,8 @@
       transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
       position: relative;
     }
-    .metric-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:transparent; }
     .metric-card:hover { transform: translateY(-2px); border-color: #81E6D9; }
     .metric-card.active { border-color: var(--gold-deep); box-shadow: 0 8px 22px rgba(56,178,172,.16); }
-    .metric-card.active::before { background: var(--gold); }
     .metric-card:has(.metric-info[open]) { z-index: 25; }
     .metric-select { display: block; width: 100%; border: 0; padding: 0 32px 0 0; background: transparent; color: inherit; text-align: left; }
     .metric-head { display: flex; align-items: center; gap: 9px; color: var(--muted); font-weight: 700; font-size: 13px; }
