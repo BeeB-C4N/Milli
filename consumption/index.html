@@ -124,6 +124,7 @@
       background: #fff; border: 1px solid var(--line); border-radius: .9rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,.12), 0 10px 10px -5px rgba(0,0,0,.05);
     }
     .multi-panel[hidden] { display: none; }
+    .attribute-multi .multi-panel { width: 100%; }
     .facility-search {
       width: 100%; height: 42px; border: 1px solid #CBD5E0; border-radius: .75rem;
       padding: 0 12px; color: var(--ink); background: #fff;
@@ -371,13 +372,13 @@
         <details class="attribute-details" open>
           <summary>観光客の属性</summary>
           <div class="attribute-grid">
-            <div class="field"><label for="pref-filter">居住都道府県</label><select id="pref-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="age-filter">年代</label><select id="age-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="companion-filter">同行者</label><select id="companion-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="nights-filter">石川県内宿泊数</label><select id="nights-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="lodging-area-filter">宿泊エリア</label><select id="lodging-area-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="income-filter">世帯年収</label><select id="income-filter"><option value="">すべて</option></select></div>
-            <div class="field"><label for="gender-filter">性別</label><select id="gender-filter"><option value="">すべて</option></select></div>
+            <div class="field"><label id="pref-filter-label">居住都道府県（複数選択）</label><div class="multi-select attribute-multi" id="pref-filter" data-filter-key="prefecture"></div></div>
+            <div class="field"><label id="age-filter-label">年代（複数選択）</label><div class="multi-select attribute-multi" id="age-filter" data-filter-key="ageGroup"></div></div>
+            <div class="field"><label id="companion-filter-label">同行者（複数選択）</label><div class="multi-select attribute-multi" id="companion-filter" data-filter-key="companionGroup"></div></div>
+            <div class="field"><label id="nights-filter-label">石川県内宿泊数（複数選択）</label><div class="multi-select attribute-multi" id="nights-filter" data-filter-key="ishikawaNights"></div></div>
+            <div class="field"><label id="lodging-area-filter-label">宿泊エリア（複数選択）</label><div class="multi-select attribute-multi" id="lodging-area-filter" data-filter-key="lodgingArea"></div></div>
+            <div class="field"><label id="income-filter-label">世帯年収（複数選択）</label><div class="multi-select attribute-multi" id="income-filter" data-filter-key="income"></div></div>
+            <div class="field"><label id="gender-filter-label">性別（複数選択）</label><div class="multi-select attribute-multi" id="gender-filter" data-filter-key="gender"></div></div>
           </div>
         </details>
         <div class="filter-foot">
@@ -497,6 +498,15 @@
     const NIGHT_ORDER = ['石川県内には宿泊しない','1泊','2泊','3泊','4泊以上'];
     const LODGING_AREA_ORDER = ['石川県内には宿泊しない','金沢エリア','加賀エリア','能登エリア','白山エリア'];
     const INCOME_ORDER = ['100万円未満','100万円以上 200万円未満','200万円以上 300万円未満','300万円以上 400万円未満','400万円以上 500万円未満','500万円以上 600万円未満','600万円以上 700万円未満','700万円以上 800万円未満','800万円以上 900万円未満','900万円以上 1,000万円未満','1,000万円以上 1,200万円未満','1,200万円以上 1,500万円未満','1,500万円以上'];
+    const ATTRIBUTE_FILTERS = {
+      prefecture: { id:'pref-filter', label:'居住都道府県' },
+      ageGroup: { id:'age-filter', label:'年代', order:AGE_ORDER },
+      companionGroup: { id:'companion-filter', label:'同行者', order:[...STANDARD_COMPANIONS,'その他','不明'] },
+      ishikawaNights: { id:'nights-filter', label:'石川県内宿泊数', order:NIGHT_ORDER },
+      lodgingArea: { id:'lodging-area-filter', label:'宿泊エリア', order:LODGING_AREA_ORDER },
+      income: { id:'income-filter', label:'世帯年収', order:INCOME_ORDER },
+      gender: { id:'gender-filter', label:'性別', order:['女','男','その他','無回答'] }
+    };
 
     const iconPaths = {
       bag: '<svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3h8l-1.4 3.1A7.4 7.4 0 0 1 19 13c0 4.4-3 8-7 8s-7-3.6-7-8a7.4 7.4 0 0 1 4.4-6.9L8 3Z"/><path d="M9 3c.6 1 1.6 1.5 3 1.5S14.4 4 15 3"/><path d="M12 9v8"/></svg>',
@@ -506,8 +516,8 @@
     };
 
     const state = {
-      rows: [], cityMap: new Map(), facilityOptions: [], selectedMetric: 'local', latestDate: null,
-      filters: { city:'', facilities:[], period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', lodgingArea:'', income:'', gender:'' }
+      rows: [], cityMap: new Map(), facilityOptions: [], attributeOptions: {}, selectedMetric: 'local', latestDate: null,
+      filters: { city:'', facilities:[], period:'all', from:'', to:'', prefecture:[], ageGroup:[], companionGroup:[], ishikawaNights:[], lodgingArea:[], income:[], gender:[] }
     };
 
     const $ = id => document.getElementById(id);
@@ -675,13 +685,78 @@
     function populateFilters() {
       populateSelect($('city-filter'), unique('city'), 'すべての市町');
       refreshFacilities();
-      populateSelect($('pref-filter'), unique('prefecture'));
-      populateSelect($('age-filter'), unique('ageGroup', AGE_ORDER));
-      populateSelect($('companion-filter'), unique('companionGroup', [...STANDARD_COMPANIONS,'その他','不明']));
-      populateSelect($('nights-filter'), unique('ishikawaNights', NIGHT_ORDER));
-      populateSelect($('lodging-area-filter'), unique('lodgingArea', LODGING_AREA_ORDER));
-      populateSelect($('income-filter'), unique('income', INCOME_ORDER));
-      populateSelect($('gender-filter'), unique('gender', ['女','男','その他','無回答']));
+      setupAttributeFilters();
+    }
+
+    function setupAttributeFilters() {
+      Object.entries(ATTRIBUTE_FILTERS).forEach(([key, config]) => {
+        const options = unique(key, config.order);
+        state.attributeOptions[key] = options;
+        const available = new Set(options);
+        state.filters[key] = (state.filters[key] || []).filter(value => available.has(value));
+        const root = $(config.id);
+        root.innerHTML = `
+          <button class="multi-trigger attribute-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${config.id}-label ${config.id}-trigger-label">
+            <span class="multi-trigger-label" id="${config.id}-trigger-label">すべて</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg>
+          </button>
+          <div class="multi-panel" hidden>
+            <input class="facility-search attribute-search" type="search" placeholder="${escapeHTML(config.label)}を検索" autocomplete="off" aria-label="${escapeHTML(config.label)}を検索">
+            <div class="multi-actions">
+              <button class="multi-action attribute-select-visible" type="button">表示中をすべて選択</button>
+              <button class="multi-action attribute-clear" type="button">選択を解除</button>
+            </div>
+            <div class="facility-options attribute-options" role="listbox" aria-multiselectable="true"></div>
+            <p class="facility-option-summary attribute-option-summary"></p>
+          </div>`;
+        renderAttributeOptions(key);
+        updateAttributeTrigger(key);
+      });
+    }
+
+    function visibleAttributeOptions(key) {
+      const root = $(ATTRIBUTE_FILTERS[key].id);
+      const query = normalizeName(root.querySelector('.attribute-search').value);
+      const options = state.attributeOptions[key] || [];
+      return query ? options.filter(value => normalizeName(value).includes(query)) : options;
+    }
+
+    function renderAttributeOptions(key) {
+      const root = $(ATTRIBUTE_FILTERS[key].id);
+      const options = visibleAttributeOptions(key);
+      const selected = new Set(state.filters[key]);
+      root.querySelector('.attribute-options').innerHTML = options.length ? options.map(value => `
+        <label class="facility-option">
+          <input type="checkbox" value="${escapeHTML(value)}" ${selected.has(value) ? 'checked' : ''} aria-label="${escapeHTML(value)}">
+          <span>${escapeHTML(value)}</span>
+        </label>`).join('') : '<p class="facility-list-empty">該当する項目がありません</p>';
+      root.querySelector('.attribute-option-summary').textContent = `${num(options.length)}項目を表示・${num(state.filters[key].length)}項目を選択`;
+    }
+
+    function updateAttributeTrigger(key) {
+      const root = $(ATTRIBUTE_FILTERS[key].id);
+      const selected = state.filters[key];
+      const label = root.querySelector('.multi-trigger-label');
+      label.textContent = selected.length === 0 ? 'すべて' : selected.length === 1 ? selected[0] : `${selected.length}項目を選択中`;
+      root.querySelector('.attribute-trigger').title = selected.length ? selected.join('、') : 'すべて';
+    }
+
+    function toggleAttributePanel(key, force) {
+      const root = $(ATTRIBUTE_FILTERS[key].id);
+      const panel = root.querySelector('.multi-panel');
+      const trigger = root.querySelector('.attribute-trigger');
+      const willOpen = typeof force === 'boolean' ? force : panel.hidden;
+      if (willOpen) closeMultiPanels(root);
+      panel.hidden = !willOpen;
+      trigger.classList.toggle('open', willOpen);
+      trigger.setAttribute('aria-expanded', String(willOpen));
+      if (willOpen) setTimeout(() => root.querySelector('.attribute-search').focus(), 0);
+    }
+
+    function applyAttributeSelection(key) {
+      updateAttributeTrigger(key);
+      renderAttributeOptions(key);
+      updateDashboard();
     }
 
     function refreshFacilities() {
@@ -719,10 +794,23 @@
     function toggleFacilityPanel(force) {
       const panel = $('facility-panel');
       const willOpen = typeof force === 'boolean' ? force : panel.hidden;
+      if (willOpen) closeMultiPanels($('facility-multi-select'));
       panel.hidden = !willOpen;
       $('facility-trigger').classList.toggle('open', willOpen);
       $('facility-trigger').setAttribute('aria-expanded', String(willOpen));
       if (willOpen) setTimeout(() => $('facility-search').focus(), 0);
+    }
+
+    function closeMultiPanels(exceptRoot = null) {
+      document.querySelectorAll('.multi-select').forEach(root => {
+        if (root === exceptRoot) return;
+        const panel = root.querySelector('.multi-panel');
+        const trigger = root.querySelector('.multi-trigger');
+        if (!panel || !trigger) return;
+        panel.hidden = true;
+        trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      });
     }
 
     function applyFacilitySelection() {
@@ -735,9 +823,7 @@
       if (document.body.dataset.bound) return;
       document.body.dataset.bound = '1';
       const mapping = {
-        'city-filter':'city','period-filter':'period','date-from':'from','date-to':'to',
-        'pref-filter':'prefecture','age-filter':'ageGroup','companion-filter':'companionGroup','nights-filter':'ishikawaNights',
-        'lodging-area-filter':'lodgingArea','income-filter':'income','gender-filter':'gender'
+        'city-filter':'city','period-filter':'period','date-from':'from','date-to':'to'
       };
       Object.entries(mapping).forEach(([id,key]) => $(id).addEventListener('change', () => {
         state.filters[key] = $(id).value;
@@ -764,14 +850,48 @@
         state.filters.facilities = [];
         applyFacilitySelection();
       });
+
+      const attributeGrid = document.querySelector('.attribute-grid');
+      attributeGrid.addEventListener('click', event => {
+        const root = event.target.closest('.attribute-multi');
+        if (!root) return;
+        const key = root.dataset.filterKey;
+        if (event.target.closest('.attribute-trigger')) toggleAttributePanel(key);
+        else if (event.target.closest('.attribute-select-visible')) {
+          state.filters[key] = [...new Set([...state.filters[key], ...visibleAttributeOptions(key)])];
+          applyAttributeSelection(key);
+        } else if (event.target.closest('.attribute-clear')) {
+          state.filters[key] = [];
+          applyAttributeSelection(key);
+        }
+      });
+      attributeGrid.addEventListener('input', event => {
+        if (!event.target.matches('.attribute-search')) return;
+        const root = event.target.closest('.attribute-multi');
+        renderAttributeOptions(root.dataset.filterKey);
+      });
+      attributeGrid.addEventListener('change', event => {
+        if (!event.target.matches('.attribute-options input[type="checkbox"]')) return;
+        const root = event.target.closest('.attribute-multi');
+        const key = root.dataset.filterKey;
+        const selected = new Set(state.filters[key]);
+        event.target.checked ? selected.add(event.target.value) : selected.delete(event.target.value);
+        state.filters[key] = [...selected];
+        updateAttributeTrigger(key);
+        root.querySelector('.attribute-option-summary').textContent = `${num(visibleAttributeOptions(key).length)}項目を表示・${num(state.filters[key].length)}項目を選択`;
+        updateDashboard();
+      });
       document.addEventListener('click', event => {
-        if (!$('facility-multi-select').contains(event.target)) toggleFacilityPanel(false);
+        if (!event.target.closest('.multi-select')) closeMultiPanels();
       });
       document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && !$('facility-panel').hidden) {
-          toggleFacilityPanel(false);
-          $('facility-trigger').focus();
-        }
+        if (event.key !== 'Escape') return;
+        const openPanel = [...document.querySelectorAll('.multi-panel')].find(panel => !panel.hidden);
+        if (!openPanel) return;
+        const root = openPanel.closest('.multi-select');
+        const trigger = root.querySelector('.multi-trigger');
+        closeMultiPanels();
+        trigger.focus();
       });
       $('reset-btn').addEventListener('click', resetFilters);
       $('reload-btn').addEventListener('click', () => location.reload());
@@ -797,9 +917,14 @@
     }
 
     function resetFilters() {
-      state.filters = { city:'', facilities:[], period:'all', from:'', to:'', prefecture:'', ageGroup:'', companionGroup:'', ishikawaNights:'', lodgingArea:'', income:'', gender:'' };
-      ['city-filter','period-filter','date-from','date-to','pref-filter','age-filter','companion-filter','nights-filter','lodging-area-filter','income-filter','gender-filter'].forEach(id => $(id).value='');
-      $('period-filter').value='all'; refreshFacilities(); toggleFacilityPanel(false); updatePeriodInputs(); updateDashboard();
+      state.filters = { city:'', facilities:[], period:'all', from:'', to:'', prefecture:[], ageGroup:[], companionGroup:[], ishikawaNights:[], lodgingArea:[], income:[], gender:[] };
+      ['city-filter','date-from','date-to'].forEach(id => $(id).value='');
+      $('period-filter').value='all';
+      refreshFacilities();
+      setupAttributeFilters();
+      closeMultiPanels();
+      updatePeriodInputs();
+      updateDashboard();
     }
 
     function getDateBounds() {
@@ -820,13 +945,13 @@
       return state.rows.filter(row => {
         if (f.city && row.city !== f.city) return false;
         if (f.facilities.length && !f.facilities.includes(row.facility)) return false;
-        if (f.prefecture && row.prefecture !== f.prefecture) return false;
-        if (f.ageGroup && row.ageGroup !== f.ageGroup) return false;
-        if (f.companionGroup && row.companionGroup !== f.companionGroup) return false;
-        if (f.ishikawaNights && row.ishikawaNights !== f.ishikawaNights) return false;
-        if (f.lodgingArea && row.lodgingArea !== f.lodgingArea) return false;
-        if (f.income && row.income !== f.income) return false;
-        if (f.gender && row.gender !== f.gender) return false;
+        if (f.prefecture.length && !f.prefecture.includes(row.prefecture)) return false;
+        if (f.ageGroup.length && !f.ageGroup.includes(row.ageGroup)) return false;
+        if (f.companionGroup.length && !f.companionGroup.includes(row.companionGroup)) return false;
+        if (f.ishikawaNights.length && !f.ishikawaNights.includes(row.ishikawaNights)) return false;
+        if (f.lodgingArea.length && !f.lodgingArea.includes(row.lodgingArea)) return false;
+        if (f.income.length && !f.income.includes(row.income)) return false;
+        if (f.gender.length && !f.gender.includes(row.gender)) return false;
         if (bounds.from && row.date < bounds.from) return false;
         if (bounds.to && row.date > bounds.to) return false;
         return true;
@@ -937,9 +1062,12 @@
 
     function renderActiveFilters() {
       const chips=[]; const f=state.filters;
-      const labels={city:'市町',prefecture:'居住地',ageGroup:'年代',companionGroup:'同行者',ishikawaNights:'宿泊数',lodgingArea:'宿泊エリア',income:'世帯年収',gender:'性別'};
-      Object.entries(labels).forEach(([key,label])=>{if(f[key])chips.push(`${label}：${f[key]}`);});
+      if (f.city) chips.push(`市町：${f.city}`);
       if (f.facilities.length) chips.push(f.facilities.length <= 2 ? `施設：${f.facilities.join('、')}` : `施設：${f.facilities.length}施設を選択`);
+      Object.entries(ATTRIBUTE_FILTERS).forEach(([key, config]) => {
+        const selected = f[key];
+        if (selected.length) chips.push(selected.length <= 2 ? `${config.label}：${selected.join('、')}` : `${config.label}：${selected.length}項目を選択`);
+      });
       const periodText=$('period-filter').selectedOptions[0]?.textContent;
       if(f.period!=='all')chips.push(f.period==='custom'?`期間：${f.from||'指定なし'}〜${f.to||'指定なし'}`:`期間：${periodText}`);
       $('active-summary').innerHTML=chips.length?chips.map(x=>`<span class="chip">${escapeHTML(x)}</span>`).join(''):'<span class="chip">すべての回答</span>';
