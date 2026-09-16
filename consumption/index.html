@@ -31,6 +31,11 @@
     }
 
     * { box-sizing: border-box; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
@@ -97,9 +102,6 @@
       background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
       padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem;
     }
-    .filter-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-    .filter-title-row h2 { margin: 0; font-size: 17px; }
-    .filter-title-row p { margin: 0; color: var(--muted); font-size: 12px; }
     .filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
     .field { min-width: 0; }
     .field label { display: block; font-size: 11px; color: var(--muted); margin: 0 0 5px 2px; font-weight: 700; }
@@ -146,7 +148,7 @@
     details.attribute-details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 13px; }
     details.attribute-details summary { width: fit-content; font-weight: 700; font-size: 14px; cursor: pointer; }
     .attribute-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 13px; }
-    .filter-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+    .filter-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
     .active-summary { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
     .chip { background: var(--gold-pale); border: 1px solid #B2F5EA; color: #2C7A7B; border-radius: 999px; padding: 3px 9px; font-size: 11px; }
     .reset-btn { flex: 0 0 auto; border: 0; background: transparent; color: var(--gold-deep); font-weight: 700; padding: 6px 4px; }
@@ -167,17 +169,34 @@
       text-align: left; width: 100%; border: 1px solid var(--line); border-radius: var(--radius);
       background: #fff; padding: 1.5rem; box-shadow: var(--shadow);
       transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-      position: relative; overflow: hidden;
+      position: relative;
     }
     .metric-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:transparent; }
     .metric-card:hover { transform: translateY(-2px); border-color: #81E6D9; }
     .metric-card.active { border-color: var(--gold-deep); box-shadow: 0 8px 22px rgba(56,178,172,.16); }
     .metric-card.active::before { background: var(--gold); }
+    .metric-card:has(.metric-info[open]) { z-index: 25; }
+    .metric-select { display: block; width: 100%; border: 0; padding: 0 32px 0 0; background: transparent; color: inherit; text-align: left; }
     .metric-head { display: flex; align-items: center; gap: 9px; color: var(--muted); font-weight: 700; font-size: 13px; }
     .metric-icon { width: 27px; height: 27px; color: var(--gold-deep); }
     .metric-value { display: block; color: var(--gold-deep); font-size: clamp(25px, 2.6vw, 35px); line-height: 1.2; margin: 10px 0 2px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .metric-meta { display: flex; flex-wrap: wrap; gap: 5px 12px; color: var(--muted); font-size: 11px; }
     .metric-meta b { color: #4f4f4f; }
+    .metric-info { position: absolute; top: 14px; right: 14px; }
+    .metric-info summary {
+      width: 25px; height: 25px; display: grid; place-items: center; list-style: none;
+      border: 1px solid #B2F5EA; border-radius: 50%; background: var(--gold-pale);
+      color: var(--gold-deep); font: 700 14px/1 Georgia, serif; cursor: pointer;
+    }
+    .metric-info summary::-webkit-details-marker { display: none; }
+    .metric-info summary:hover { background: #B2F5EA; }
+    .metric-info[open] summary { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .metric-info-popover {
+      position: absolute; top: 33px; right: 0; width: min(320px, calc(100vw - 56px));
+      padding: 13px 14px; border: 1px solid var(--line); border-radius: .85rem;
+      background: #fff; box-shadow: 0 18px 32px rgba(45,55,72,.16);
+      color: var(--ink); font-size: 11px; line-height: 1.75; font-weight: 400;
+    }
 
     .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 16px; }
     .panel {
@@ -248,8 +267,9 @@
     .loader-mark { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--gold); margin: 0 auto 14px; animation: breathe 1.4s ease-in-out infinite; }
     .loader-mark svg { width: 29px; height: 29px; }
     @keyframes breathe { 50% { transform: scale(1.06); box-shadow: 0 8px 25px rgba(79,209,197,.32); } }
-    .loading-card h2 { margin: 0 0 5px; font-size: 19px; }
-    .loading-card p { margin: 0; color: var(--muted); font-size: 12px; }
+    .loading-card h2 { margin: 0; font-size: 19px; }
+    .loading-card p { display: none; margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .loading.error .loading-card p { display: block; }
     .loading-actions { display: none; gap: 8px; justify-content: center; margin-top: 16px; }
     .loading.error .loading-actions { display: flex; }
     #file-input { display: none; }
@@ -269,14 +289,14 @@
       .filter-shell, .panel { padding: 16px; border-radius: 15px; }
       .filter-grid, .attribute-grid { grid-template-columns: 1fr; }
       .date-pair { grid-column: auto; }
-      .filter-title-row { display: block; }
-      .filter-title-row p { margin-top: 3px; }
       .filter-foot { align-items: flex-start; }
       .scope-strip { align-items: center; }
       .scope-strip h2 { font-size: 18px; }
       .response-count strong { font-size: 24px; }
       .metric-grid { grid-template-columns: 1fr; }
       .metric-card { padding: 15px; }
+      .metric-info { top: 12px; right: 12px; }
+      .metric-info-popover { width: min(340px, calc(100vw - 48px)); }
       .metric-value { font-size: 29px; }
       .panel-head { display: block; }
       .panel-control { width: 100%; margin-top: 11px; }
@@ -285,16 +305,47 @@
       .comp-row { grid-template-columns: 96px minmax(70px,1fr) 102px; gap: 7px; }
       .comp-value strong { min-width: 0; }
     }
+
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body { background: #fff; }
+      .wrap { width: 100%; }
+      .topbar-inner { min-height: 58px; padding-top: 0; }
+      .top-actions, .loading, .multi-panel, .metric-info-popover { display: none !important; }
+      main { padding: 12px 0 0; }
+      .filter-shell, .metric-card, .panel { box-shadow: none; }
+      .filter-shell, .scope-strip, .metric-grid, .panel, .metric-card, .dist-row, .comp-row {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .dashboard-grid { display: block; }
+      .panel { margin-bottom: 12px; }
+      .metric-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .metric-card { padding: 14px; }
+      .metric-value { font-size: 25px; }
+      .dist-track, .comp-track { background: #EDF2F7 !important; }
+      .dist-bar, .comp-bar {
+        height: 0 !important; background: transparent !important;
+        border-top: 1.25rem solid #4FD1C5 !important;
+        transition: none !important;
+      }
+      .line-average { stroke: #38B2AC !important; }
+      .line-median { stroke: #4A5568 !important; }
+      .trend-wrap { overflow: visible; }
+      .trend-svg { min-width: 0; }
+      details.attribute-details:not([open]) > :not(summary), details.method:not([open]) > :not(summary) { display: none !important; }
+    }
   </style>
 </head>
 <body>
   <div class="loading" id="loading" role="status" aria-live="polite">
     <div class="loading-card">
-      <div class="loader-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 3h8l-1.4 3.1A7.4 7.4 0 0 1 19 13c0 4.4-3 8-7 8s-7-3.6-7-8a7.4 7.4 0 0 1 4.4-6.9L8 3Z"/><path d="M9 3c.6 1 1.6 1.5 3 1.5S14.4 4 15 3"/><path d="M12 9v8m2.2-6.3c-.5-.6-1.2-.9-2.2-.9-1.2 0-2 .6-2 1.5 0 2.5 4.2 1 4.2 3.6 0 .9-.8 1.6-2.2 1.6-1 0-1.8-.3-2.4-1"/></svg>
-      </div>
       <h2 id="loading-title">Milliデータを読み込んでいます</h2>
-      <p id="loading-message">回答件数が多いため、数秒かかる場合があります。</p>
+      <p id="loading-message"></p>
       <div class="loading-actions">
         <button class="primary-btn" id="retry-btn" type="button">再試行</button>
         <button class="ghost-btn" id="choose-files-btn" type="button">CSVを選択</button>
@@ -324,10 +375,7 @@
   <main>
     <div class="wrap">
       <section class="filter-shell" aria-labelledby="filter-heading">
-        <div class="filter-title-row">
-          <h2 id="filter-heading">表示条件</h2>
-          <p>すべてのカード・グラフに同じ条件が反映されます</p>
-        </div>
+        <h2 id="filter-heading" class="sr-only">表示条件</h2>
         <div class="filter-grid">
           <div class="field">
             <label for="city-filter">市町</label>
@@ -369,7 +417,7 @@
           </div>
         </div>
 
-        <details class="attribute-details" open>
+        <details class="attribute-details">
           <summary>観光客の属性</summary>
           <div class="attribute-grid">
             <div class="field"><label id="pref-filter-label">居住都道府県（複数選択）</label><div class="multi-select attribute-multi" id="pref-filter" data-filter-key="prefecture"></div></div>
@@ -488,10 +536,22 @@
       ['50,000円以上 100,000円未満','5万〜10万円'], ['100,000円以上','10万円以上']
     ]);
     const METRICS = {
-      local: { label: '現地消費額', field: 'localRaw', icon: 'bag' },
-      transport: { label: '交通費', field: 'transportRaw', icon: 'car' },
-      lodging: { label: '宿泊費', field: 'lodgingRaw', icon: 'hotel' },
-      facility: { label: '施設での消費額', field: 'facilityRaw', icon: 'gift' }
+      local: {
+        label: '現地消費額', field: 'localRaw', icon: 'bag',
+        description: '今回の旅行またはお出かけにおける、石川県内での具体的な現地消費額をお答えください。（予定でも可/１人あたり）\n※飲食、買い物、体験・観光などの消費額合計\n※宿泊費、交通費を除く'
+      },
+      transport: {
+        label: '交通費', field: 'transportRaw', icon: 'car',
+        description: '今回の旅行またはお出かけにおける石川県内での具体的な交通費をお答えください。（予定でも可/１人あたり）\n※石川県外からの交通費、石川県内での交通費を含む。'
+      },
+      lodging: {
+        label: '宿泊費', field: 'lodgingRaw', icon: 'hotel',
+        description: '今回の旅行またはお出かけにおける、石川県内での具体的な宿泊費をお答えください。（予定でも可/１人あたり）'
+      },
+      facility: {
+        label: '施設での消費額', field: 'facilityRaw', icon: 'gift',
+        description: '当施設における、消費総額をお答えください。（予定でも可/１人あたり）'
+      }
     };
     const STANDARD_COMPANIONS = ['自分ひとり','夫婦2人','恋人','友人','親','小学生以下連れの家族','中学生以上連れの家族','中学生以下連れの家族','職場の同僚','団体旅行','学校関係（修学旅行・社会科見学等）'];
     const AGE_ORDER = ['10歳未満','10代','20代','30代','40代','50代','60代','70代','80歳以上','不明'];
@@ -652,7 +712,7 @@
     }
 
     async function loadData() {
-      showLoading('Milliデータを読み込んでいます', '回答件数が多いため、数秒かかる場合があります。');
+      showLoading('Milliデータを読み込んでいます');
       try {
         const [dataTable, cityTable] = await Promise.all([loadGviz(DATA_SHEET_ID, DATA_QUERY), loadGviz(CITY_SHEET_ID, CITY_QUERY)]);
         initialize(tableToRecords(dataTable, cityTable), 'Googleスプレッドシート');
@@ -993,11 +1053,17 @@
     function renderMetricCards(rows) {
       $('metric-grid').innerHTML = Object.entries(METRICS).map(([key,metric]) => {
         const s=stats(metricValues(rows,key));
-        return `<button class="metric-card ${key===state.selectedMetric?'active':''}" data-metric="${key}" type="button" aria-pressed="${key===state.selectedMetric}">
-          <span class="metric-head">${iconPaths[metric.icon]}${metric.label}（平均）</span>
-          <strong class="metric-value">${yen(s.avg)}</strong>
-          <span class="metric-meta"><span>中央値 <b>${yen(s.median)}</b></span><span>有効回答 <b>${num(s.n)}件</b></span></span>
-        </button>`;
+        return `<article class="metric-card ${key===state.selectedMetric?'active':''}">
+          <button class="metric-select" data-metric="${key}" type="button" aria-pressed="${key===state.selectedMetric}">
+            <span class="metric-head">${iconPaths[metric.icon]}${metric.label}（平均）</span>
+            <strong class="metric-value">${yen(s.avg)}</strong>
+            <span class="metric-meta"><span>中央値 <b>${yen(s.median)}</b></span><span>有効回答 <b>${num(s.n)}件</b></span></span>
+          </button>
+          <details class="metric-info">
+            <summary aria-label="${escapeHTML(metric.label)}のアンケート項目説明" title="アンケート項目の説明">i</summary>
+            <div class="metric-info-popover">${escapeHTML(metric.description).replace(/\n/g,'<br>')}</div>
+          </details>
+        </article>`;
       }).join('');
     }
 
@@ -1076,7 +1142,7 @@
     function emptyHTML(message) {
       return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8.5 11h5"/></svg><p>${escapeHTML(message)}</p></div>`;
     }
-    function showLoading(title,message){$('loading-title').textContent=title;$('loading-message').textContent=message;$('loading').classList.remove('hidden','error');}
+    function showLoading(title,message=''){$('loading-title').textContent=title;$('loading-message').textContent=message;$('loading').classList.remove('hidden','error');}
     function showLoadError(message){$('loading-title').textContent='データを読み込めませんでした';$('loading-message').textContent=message;$('loading').classList.add('error');$('loading').classList.remove('hidden');}
 
     async function handleFileUpload(event) {
